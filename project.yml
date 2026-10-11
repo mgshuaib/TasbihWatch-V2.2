@@ -1,0 +1,134 @@
+name: Tasbih
+
+# 🎯 هذا الملف يصف مشروع Xcode نصيًّا. الأداة XcodeGen تولّد منه ملف .xcodeproj
+# على سيرفر البناء تلقائيًا — أي أنك لن تفتح Xcode أبدًا.
+
+options:
+  bundleIdPrefix: com.example          # ← غيّره إلى معرّفك
+  createIntermediateGroups: true
+  deploymentTarget:
+    watchOS: "11.0"
+
+settings:
+  base:
+    MARKETING_VERSION: "1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    SWIFT_VERSION: "5.9"
+    CODE_SIGN_STYLE: Automatic
+    DEVELOPMENT_TEAM: XXXXXXXXXX        # ← ضع رقم فريقك (Team ID) هنا
+    ALWAYS_SEARCH_USER_PATHS: NO
+    CLANG_ENABLE_MODULES: YES
+    ENABLE_USER_SCRIPT_SANDBOXING: NO
+
+targets:
+
+  # ─────────────────────────────────────────────
+  # تطبيق الساعة (watch-only، بدون تطبيق آيفون)
+  # ─────────────────────────────────────────────
+  Tasbih:
+    type: application
+    platform: watchOS
+    sources:
+      - path: Shared.swift
+      - path: Theme.swift
+      - path: Sounds.swift
+      - path: StatsView.swift
+      - path: OnboardingView.swift
+      - path: Fonts
+      - path: Sounds
+      - path: GestureCompat.swift
+      - path: Haptics.swift
+      - path: MotionCounter.swift
+      - path: SessionManager.swift
+      - path: CounterModel.swift
+      - path: CounterView.swift
+      - path: ReadingView.swift
+      - path: OptionsPanel.swift
+      - path: SetBackgrounds.swift
+      - path: MenuView.swift
+      - path: TasbihApp.swift
+      - path: Tasbih/Assets.xcassets
+    info:
+      path: Support/Tasbih-Info.plist
+      properties:
+        CFBundleDisplayName: سُبحة
+        # ✅ ضروري: يعلن أن هذا الحزمة تطبيق ساعة بالمفهوم الحديث (Xcode 14+)
+        WKApplication: true
+        # ✅ تطبيق ساعة مستقل بدون تطبيق آيفون مرافق
+        WKWatchOnly: true
+        # ✅ لتشغيل جلسة التشغيل الممتدة (العدّ يستمر بعد انطفاء الشاشة)
+        WKBackgroundModes:
+          # ✅ mindfulness: حتى ساعة كاملة (العدّ يستمر والشاشة مطفأة).
+          #    للتغيير إلى 10 دقائق فقط: استبدلها بـ self-care
+          - mindfulness
+        # ✅ يمنع سؤال «التشفير» عند كل رفع لـ TestFlight
+        ITSAppUsesNonExemptEncryption: false
+        # ✅ الخطوط العربية المرفقة (أميري: نسخي قرآنّي · المراعي: عصري للواجهة)
+        #    ملاحظة: أسماء الملفات فقط بلا مسار، لأن xcodegen ينسخ الموارد إلى جذر الحزمة.
+        #    والتطبيق يتحقق من توفّرها وقت التشغيل، فإن لم تُحمَّل رجع لخط النظام بسلاسة.
+        UIAppFonts:
+          - Amiri-Regular.ttf
+          - Amiri-Bold.ttf
+          - Almarai-Regular.ttf
+          - Almarai-Bold.ttf
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.example.tasbih    # ← غيّره
+        PRODUCT_NAME: Tasbih
+        TARGETED_DEVICE_FAMILY: "4"                      # 4 = Apple Watch
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        GENERATE_INFOPLIST_FILE: NO
+    # 🔐 صلاحية مجموعة التطبيق — إلزامية ليتشارك الودجت العدّ مع التطبيق.
+    #    ⚠️ غيّر المعرّف هنا **وفي نفس الوقت** في Shared.swift → appGroupID
+    entitlements:
+      path: Support/Tasbih.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.com.yourname.tasbih
+    dependencies:
+      - target: TasbihWidgetExtension
+        embed: true
+
+  # ─────────────────────────────────────────────
+  # إضافة الودجت (Smart Stack) — تُدمج داخل تطبيق الساعة
+  # ─────────────────────────────────────────────
+  TasbihWidgetExtension:
+    type: app-extension
+    platform: watchOS
+    sources:
+      - path: Widget
+      - path: Shared.swift          # يحتاجها الودجت لقراءة العدّاد
+      - path: GestureCompat.swift   # يحتاجها الودجت للإيماءة داخل الودجت
+    info:
+      path: Support/TasbihWidget-Info.plist
+      properties:
+        CFBundleDisplayName: سُبحة
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.example.tasbih.widget   # ← غيّره
+        PRODUCT_NAME: TasbihWidget
+        SKIP_INSTALL: YES
+        TARGETED_DEVICE_FAMILY: "4"
+        GENERATE_INFOPLIST_FILE: NO
+
+    # 🔐 نفس صلاحية مجموعة التطبيق — بدونها يقرأ الودجت أصفارًا
+    entitlements:
+      path: Support/TasbihWidget.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.com.yourname.tasbih
+
+schemes:
+  Tasbih:
+    build:
+      targets:
+        Tasbih: all
+        TasbihWidgetExtension: all      # صراحةً: ترجمة الودجت داخل نفس البناء
+    run:
+      config: Debug
+    archive:
+      config: Release
+    test:
+      config: Debug

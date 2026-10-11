@@ -1,0 +1,18 @@
+{
+  "images": [
+    {
+      "filename": "after_prayer.jpg",
+      "idiom": "universal",
+      "scale": "1x"
+    },
+    {
+      "filename": "after_prayer@2x.jpg",
+      "idiom": "universal",
+      "scale": "2x"
+    }
+  ],
+  "info": {
+    "author": "xcode",
+    "version": 1
+  }
+}

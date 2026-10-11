@@ -1,0 +1,31 @@
+# ── مخرجات البناء ──
+build/
+DerivedData/
+*.xcarchive
+*.ipa
+*.xcresult
+build-log-*.txt
+
+# ── مشروع Xcode المُولَّد (يُولّده xcodegen من project.yml — لا يُرفع) ──
+*.xcodeproj/
+*.xcworkspace/
+
+# ── ملفات تصميم مصدرية كبيرة (تبقى على جهازك فقط) ──
+Backgrounds/raw/
+
+# ── أدوات الاختبار (تُثبَّت بـ npm install) ──
+tests/node_modules/
+tests/package-lock.json
+node_modules/
+
+# ── مفاتيح وتوقيع (لا تُرفع أبدًا) ──
+private_keys/
+*.p8
+*.p12
+*.mobileprovision
+*.keychain
+
+# ── نظام ──
+.DS_Store
+*.swp
+__pycache__/

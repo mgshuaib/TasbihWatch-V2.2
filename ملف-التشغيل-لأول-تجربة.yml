@@ -1,0 +1,76 @@
+# ════════════════════════════════════════════════════════════════
+#  ملف التشغيل المصغّر — النسخة ٢ (بعد إصلاح «لم أجد project.yml»)
+#
+#  📋 الطريقة: افتح هذا الملف ← حدِّد كل المحتوى ← انسخه
+#     ثم في GitHub: افتح .github/workflows/main.yml ← ✏️ (قلم) ←
+#     Ctrl+A ← Delete ← الصق هذا ← Commit changes
+#
+#  ✅ الجديد: يبحث عن مجلد المشروع بنفسه، فيعمل سواء كانت الملفات
+#     في الجذر أو داخل مجلد فرعي (مثل حالتك الحالية).
+# ════════════════════════════════════════════════════════════════
+
+name: تجربة بناء التطبيق
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 40
+    steps:
+      - name: جلب الملفات
+        uses: actions/checkout@v4
+
+      - name: 🔎 البحث عن مجلد المشروع
+        run: |
+          SPEC_FILE="$(find . -name project.yml -not -path '*/node_modules/*' | head -1)"
+          if [ -z "$SPEC_FILE" ]; then
+            echo "## ❌ لم أجد ملف project.yml" >> "$GITHUB_STEP_SUMMARY"
+            echo "تأكد أنك رفعت ملفات المشروع كاملة." >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+          echo "PROJECT_DIR=$(dirname "$SPEC_FILE")" >> "$GITHUB_ENV"
+          echo "✅ وجدت المشروع في: $(dirname "$SPEC_FILE")"
+
+      - name: تجهيز أدوات البناء
+        working-directory: ${{ env.PROJECT_DIR }}
+        run: |
+          brew install xcodegen
+          xcodegen generate
+
+      - name: 🛠️ بناء التطبيق
+        working-directory: ${{ env.PROJECT_DIR }}
+        run: |
+          set -o pipefail
+          xcodebuild build \
+            -project Tasbih.xcodeproj \
+            -scheme Tasbih \
+            -destination "generic/platform=watchOS" \
+            CODE_SIGNING_ALLOWED=NO 2>&1 | tee log.txt | tail -40
+
+      - name: 📋 النتيجة
+        if: always()
+        working-directory: ${{ env.PROJECT_DIR || '.' }}
+        run: |
+          if grep -q "BUILD SUCCEEDED" log.txt 2>/dev/null; then
+            {
+              echo "## ✅ نجح بناء التطبيق"
+              echo ""
+              echo "**معناها:** الشيفرة سليمة وتُبنى بلا أخطاء. لا تفعل شيئًا."
+            } >> "$GITHUB_STEP_SUMMARY"
+          else
+            ERRORS="$(grep -E 'error:' log.txt 2>/dev/null | sort -u | head -30 || true)"
+            echo "❌ الأخطاء:"
+            echo "$ERRORS"
+            {
+              echo "## ❌ فشل البناء"
+              echo ""
+              echo "### 🟥 الأخطاء — انسخها أو صوّر الشاشة وأرسلها:"
+              echo ""
+              echo '```'
+              echo "$ERRORS"
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi

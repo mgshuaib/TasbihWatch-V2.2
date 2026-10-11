@@ -1,0 +1,1609 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>محاكي تطبيق سُبحة — مجموعات الأذكار</title>
+<style>
+  :root{
+    --bg:#0b0f13; --panel:#101720; --panel2:#16202a; --line:#233040;
+    --emerald:#29c79a; --mint:#59e0ad; --teal:#2dd4bf; --green:#22c55e;
+    --gold:#f7c85c; --txt:#e9f1ee; --dim:#8fa3ab; --dim2:#5f7280;
+    --accent:#38bdf8;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--txt);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Tahoma,"Noto Sans Arabic",Arial,sans-serif}
+  body{padding:18px 14px 40px; line-height:1.6}
+  h1{font-size:20px;margin:0 0 4px;font-weight:700}
+  .sub{color:var(--dim);font-size:13px;margin:0 0 18px}
+  .wrap{display:flex;flex-wrap:wrap;gap:26px;justify-content:center;align-items:flex-start;max-width:1140px;margin:0 auto}
+
+  /* ═══════ الساعة ═══════ */
+  .watch-stage{display:flex;flex-direction:column;align-items:center;gap:14px}
+  .watch{position:relative;width:330px;padding:52px 0;display:flex;justify-content:center;flex-direction:column;align-items:center}
+  .strap{width:150px;height:80px;border-radius:26px 26px 14px 14px;
+    background:linear-gradient(180deg,#2b3238,#191e22);box-shadow:inset 0 0 0 1px #000, 0 10px 24px rgba(0,0,0,.5);position:relative}
+  .strap.down{border-radius:14px 14px 26px 26px;background:linear-gradient(0deg,#2b3238,#191e22)}
+  .strap:before{content:"";position:absolute;inset:12px 12px auto;height:1px;background:#000;box-shadow:0 6px 0 #000,0 12px 0 #000,0 18px 0 #000,0 24px 0 #000;opacity:.5}
+  .case{position:relative;width:286px;height:340px;border-radius:76px;
+    background:linear-gradient(150deg,#3b444c,#1d2226 40%,#2a3137 70%,#171b1f);padding:12px;
+    box-shadow:0 26px 60px rgba(0,0,0,.75), inset 0 1px 1px rgba(255,255,255,.18)}
+  .crown{position:absolute;right:-9px;top:104px;width:13px;height:44px;border-radius:5px;
+    background:linear-gradient(90deg,#4c555d,#22282c);box-shadow:inset 0 0 0 1px #000}
+  .crown:after{content:"";position:absolute;inset:6px 3px;border-radius:3px;
+    background:repeating-linear-gradient(0deg,#5b656d 0 1px,#232a2f 1px 3px)}
+  .sidebtn{position:absolute;right:-7px;top:172px;width:10px;height:52px;border-radius:5px;
+    background:linear-gradient(90deg,#39424a,#1b2125);box-shadow:inset 0 0 0 1px #000}
+  .screen{position:relative;width:100%;height:100%;border-radius:64px;overflow:hidden;background:#000;
+    box-shadow:inset 0 0 0 1px #000;transition:filter .3s}
+  .glow{position:absolute;inset:0;pointer-events:none;border-radius:64px;
+    background:radial-gradient(120% 80% at 50% 110%, rgba(45,212,191,.10), transparent 60%)}
+
+  .view{position:absolute;inset:0;display:none;flex-direction:column;padding:13px 12px 10px}
+  .view.on{display:flex}
+  /* ── ثبات التخطيط: ارتفاعات ثابتة كي لا تتحرك الأزرار مع طول الذكر ── */
+  .vhead{height:52px;flex:0 0 auto;display:flex;flex-direction:column;justify-content:center;
+    gap:1px;overflow:hidden;text-align:center;margin-bottom:2px}
+  .setname{font-size:10px;font-weight:600;color:var(--teal);letter-spacing:.2px;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .dhikr{font-size:14px;font-weight:600;color:#eafffb;height:20px;line-height:20px;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .meta{font-size:9px;color:var(--dim2);height:12px;line-height:12px;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+  .ringwrap{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;
+    position:relative;overflow:hidden}
+  .ring{position:relative;width:146px;height:146px;flex:0 0 auto;cursor:pointer;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;user-select:none}
+  .ring svg{position:absolute;inset:0;transform:rotate(-90deg)}
+  .ring .track{fill:none;stroke:rgba(255,255,255,.13);stroke-width:7}
+  .ring .prog{fill:none;stroke:var(--teal);stroke-width:7;stroke-linecap:round;transition:stroke-dashoffset .25s ease}
+  .ring .num{font-size:50px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums;transition:transform .12s}
+  .ring .of{font-size:11px;color:var(--dim);margin-top:2px}
+  .ring.pulse .num{transform:scale(1.07)}
+  .ring .syshl{position:absolute;inset:-7px;border-radius:50%;border:3px solid var(--accent);opacity:0;transition:opacity .18s;pointer-events:none}
+  .ring.hl .syshl{opacity:.95}
+
+  /* شريط تقدّم المجموعة (يحلّ محل النقاط) */
+  .track-row{display:flex;gap:3px;justify-content:center;height:4px;flex:0 0 auto;margin:3px 0 6px}
+  .seg{height:4px;width:14px;border-radius:3px;background:rgba(255,255,255,.16)}
+  .seg.done{background:var(--green)}
+  .seg.cur{background:var(--teal);box-shadow:0 0 8px rgba(45,212,191,.6)}
+  .nextline{font-size:9px;color:var(--dim2);text-align:center;height:12px;line-height:12px;flex:0 0 auto;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+
+  .vfoot{display:flex;flex-direction:column;gap:4px;align-items:center;flex:0 0 auto}
+  .status{font-size:8.5px;color:var(--dim2);text-align:center;height:11px;line-height:11px;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;flex:0 0 auto}
+  .status.warn{color:#f59e0b}
+  .btnrow{display:flex;gap:6px;width:100%;height:28px;flex:0 0 auto}
+  .wbtn{flex:1;height:28px;display:flex;align-items:center;justify-content:center;
+    font-size:11px;font-weight:600;color:#dfe7ec;background:rgba(255,255,255,.07);
+    border:1px solid rgba(255,255,255,.09);border-radius:15px;padding:0 4px;cursor:pointer;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .wbtn:active{background:rgba(255,255,255,.15)}
+  .wbtn.prom{background:#0f3f3c;border-color:#1c6b63;color:#c8f7f0}
+  .wbtn.icon{flex:0 0 auto;width:32px;font-size:13px;padding:6px 0;line-height:1}
+  .wbtn.icon.on{background:#0f3f3c;border-color:#1c6b63;color:#c8f7f0;box-shadow:0 0 10px rgba(45,212,191,.35)}
+
+  /* قائمة المجموعات */
+  .setslist{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:6px;padding-inline-end:2px}
+  .setrow{display:flex;align-items:center;gap:8px;padding:8px;border-radius:14px;
+    background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.08);cursor:pointer}
+  .setrow:active{background:rgba(255,255,255,.12)}
+  .setrow.cur{border-color:var(--teal);background:rgba(45,212,191,.12)}
+  .setrow .ico{font-size:15px}
+  .setrow .tt{font-size:12px;font-weight:600}
+  .setrow .dt{font-size:9px;color:var(--dim)}
+  .setrow .chk{margin-inline-start:auto;color:var(--teal);font-size:12px}
+
+  /* الإعدادات */
+  .setlist{flex:1}
+  .srow{display:flex;justify-content:space-between;align-items:center;padding:7px 2px;border-bottom:1px solid rgba(255,255,255,.07);font-size:11.5px}
+  .sw{width:34px;height:19px;border-radius:10px;background:#3a444c;position:relative;cursor:pointer;flex:0 0 auto}
+  .sw:after{content:"";position:absolute;top:2px;right:2px;width:15px;height:15px;border-radius:50%;background:#e9eef2;transition:.2s}
+  .sw.on{background:var(--teal)} .sw.on:after{right:17px}
+
+  /* Smart Stack */
+  .stack{flex:1;display:flex;flex-direction:column;gap:8px;justify-content:center}
+  .wcard{border-radius:20px;background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.08);
+    padding:9px;display:flex;align-items:center;gap:8px}
+  .wcard.hl{border-color:var(--accent);box-shadow:0 0 0 2px rgba(56,189,248,.35),0 0 22px rgba(56,189,248,.25)}
+  .wcard.dimcard{opacity:.4}
+  .wcard .st{font-size:8.5px;color:var(--teal);font-weight:600}
+  .wcard .ttl{font-size:11px;font-weight:600}
+  .wcard .cnt{font-size:15px;font-weight:700;font-variant-numeric:tabular-nums}
+  .wcard .plus{margin-inline-start:auto;width:30px;height:30px;border-radius:50%;
+    background:rgba(45,212,191,.16);border:1px solid rgba(45,212,191,.45);display:flex;
+    align-items:center;justify-content:center;font-size:16px;color:var(--teal);cursor:pointer}
+  .mini{width:32px;height:32px;position:relative} .mini svg{transform:rotate(-90deg)}
+
+  /* رسالة إتمام المجموعة */
+  .done{position:absolute;inset:0;background:rgba(0,0,0,.96);display:none;flex-direction:column;
+    align-items:center;justify-content:center;gap:5px;padding:14px;text-align:center;z-index:6}
+  .done.on{display:flex}
+  .done .seal{font-size:34px;animation:beat 1.4s ease-in-out infinite}
+  @keyframes beat{0%,100%{transform:scale(1)}50%{transform:scale(1.12)}}
+  .done .ttl{font-size:14px;font-weight:700}
+  .done .dua{font-size:10.5px;color:#b9c7d0;line-height:1.6}
+  .done .stats{width:100%;background:rgba(255,255,255,.07);border-radius:12px;padding:7px 9px;margin:3px 0}
+  .done .srow2{display:flex;justify-content:space-between;font-size:9.5px;color:var(--dim);padding:1px 0}
+  .done .srow2 b{color:var(--txt);font-weight:600}
+  .done .btns{display:flex;flex-direction:column;gap:5px;width:100%;margin-top:3px}
+
+  /* الطبقات العائمة */
+  .aod{position:absolute;inset:0;background:rgba(0,0,0,.95);opacity:0;transition:opacity .45s;pointer-events:none;
+    display:flex;align-items:center;justify-content:center;flex-direction:column;gap:6px;z-index:5}
+  .aod.on{opacity:1}
+  .aod .big{font-size:44px;font-weight:600;color:#6b7a85;font-variant-numeric:tabular-nums}
+  .aodmode{font-size:10px;font-weight:600;margin-top:4px;color:var(--dim)}
+  .aod .lbl{font-size:10px;color:#4d5b66;text-align:center;max-width:180px;line-height:1.5}
+  .toast{position:absolute;inset-inline:14px;bottom:14px;background:rgba(245,158,11,.16);
+    border:1px solid rgba(245,158,11,.5);color:#fbbf24;font-size:10px;border-radius:14px;padding:7px 9px;
+    text-align:center;opacity:0;transition:.25s;pointer-events:none;z-index:7;line-height:1.45}
+  .toast.on{opacity:1}
+  .flash{position:absolute;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;
+    gap:4px;background:rgba(0,0,0,.82);z-index:5}
+  .flash.on{display:flex;animation:fl .65s ease-out}
+  @keyframes fl{0%{opacity:0}20%{opacity:1}100%{opacity:0}}
+  .flash .ck{font-size:30px;color:var(--green)}
+  .flash .tx{font-size:11px;font-weight:600;color:var(--green);max-width:200px}
+
+  /* ═══ وضع القراءة: نص كامل + عدّاد صغير في الزاوية ═══ */
+  #readLayout{flex:1;display:none;flex-direction:column;min-height:0;position:relative}
+  #readLayout.on{display:flex}
+  .rdScroll{flex:1;min-height:0;overflow-y:auto;padding-inline-end:3px;padding-bottom:26px;cursor:pointer}
+  .rdScroll::-webkit-scrollbar{width:3px}
+  .rdScroll::-webkit-scrollbar-thumb{background:rgba(255,255,255,.18);border-radius:3px}
+  .rdTitle{font-size:13px;font-weight:700;color:var(--teal);margin-bottom:5px;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .rdText{text-align:right;line-height:1.95;color:#e9f4f2;font-weight:400}
+  .fs0 .rdTitle{font-size:11.5px} .fs0 .rdText{font-size:11.5px;line-height:1.85}
+  .fs1 .rdTitle{font-size:13px}   .fs1 .rdText{font-size:13px;line-height:1.95}
+  .fs2 .rdTitle{font-size:14.5px} .fs2 .rdText{font-size:14.5px;line-height:2.05}
+
+  /* العدّاد الصغير في الزاوية */
+  /* العدّاد: الزاوية العلوية اليمنى (يُبدَّل لليسار من القائمة) */
+  .badge{position:absolute;top:6px;right:6px;bottom:auto;left:auto;width:56px;height:56px;border-radius:50%;
+    background:rgba(30,38,44,.72);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.14);
+    display:none;align-items:center;justify-content:center;cursor:pointer;z-index:4;
+    box-shadow:0 6px 18px rgba(0,0,0,.55)}
+  .badge.on{display:flex}
+  .badge.left{right:auto;left:6px}   /* الزاوية العلوية اليسرى */
+  .badge svg{position:absolute;inset:0;transform:rotate(-90deg)}
+  .badge .bTrack{fill:none;stroke:rgba(255,255,255,.16);stroke-width:3}
+  .badge .bProg{fill:none;stroke:var(--teal);stroke-width:3;stroke-linecap:round;transition:stroke-dashoffset .2s}
+  .badge .bNum{font-size:17px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums}
+  .badge .bTarget{font-size:7.5px;color:var(--dim);margin-top:1px}
+  .badge.hl{box-shadow:0 0 0 3px var(--accent), 0 6px 18px rgba(0,0,0,.55)}
+  .badge.big .bNum{animation:bpulse .25s}
+  @keyframes bpulse{0%{transform:scale(1)}50%{transform:scale(1.25)}100%{transform:scale(1)}}
+
+
+  /* ═══ الرؤية من بعيد: خط أكبر وأسمك + تعزيز سماكة التشكيل ═══ */
+  #readLayout.dist .rdTitle{font-size:1.35em;font-weight:800}
+  #readLayout.dist .rdText{
+    font-size:1.42em; font-weight:700; line-height:2.25;
+    /* سماكة إضافية لمحيط الحرف — تُبرز علامات التشكيل الرفيعة من مسافة */
+    -webkit-text-stroke:0.38px currentColor;
+    text-shadow:0 0 1px rgba(45,212,191,.25);
+    font-family:"Amiri","Scheherazade New",system-ui,sans-serif;
+  }
+
+  /* شريط التلقين أسفل الشاشة */
+  /* ⬆️ شريط التلقين + الرؤية من بعيد: أعلى الشاشة فوق اسم الذكر (كان أسفلها) */
+  .promptbar{position:relative;height:28px;display:none;align-items:center;justify-content:center;
+    gap:4px;background:rgba(20,26,31,.86);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.1);
+    border-radius:999px;padding:0 4px;margin:0 0 6px;flex:0 0 auto;z-index:12}
+  .promptbar.on{display:flex}
+  .pbtn{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    font-size:10px;color:var(--teal);background:rgba(45,212,191,.14);border:1px solid rgba(45,212,191,.4);cursor:pointer}
+  .pbtn:active{background:rgba(45,212,191,.34)}
+  .plabel{font-size:8.5px;color:var(--dim);padding-inline-end:3px;white-space:nowrap}
+  .pbar2{width:34px;height:3px;border-radius:2px;background:rgba(255,255,255,.16);overflow:hidden}
+  .pbar2 i{display:block;height:100%;width:0;background:var(--teal);border-radius:2px;transition:width .1s linear}
+  #v-counter.read-mode .vfoot .status{display:none}
+
+
+  /* ═══ خلفية المجموعة (صورة خافتة متناسقة) ═══ */
+  .bgimg{position:absolute;inset:0;background-size:cover;background-position:center;
+    opacity:0;transition:opacity .6s ease;z-index:0;pointer-events:none}
+  .screen.bg-on .bgimg{opacity:var(--bgop,.55)}
+  .bgdim{position:absolute;inset:0;z-index:1;pointer-events:none;opacity:0;transition:opacity .6s ease;
+    background:radial-gradient(120% 100% at 50% 45%, rgba(0,0,0,.18) 0%, rgba(0,0,0,.55) 72%, rgba(0,0,0,.78) 100%)}
+  .screen.bg-on .bgdim{opacity:1}
+  /* ═══════════════════════════════════════════════════════════════════
+     🔒 تثبيت الطبقات فوق الخلفيات — دون لمس `position`!
+     كان هنا سطر `.view,.aod,...,.mbtn,.promptbar{position:relative}` يُبطِل
+     `position:absolute` لكل هذه العناصر ⇒ الشاشة لا تملأ الساعة، والتذييل
+     والأزرار والعدّاد تتبع ارتفاع النص: تختفي مع آية الكرسي وترتفع مع
+     الذكر القصير. أُعيد تثبيت موضع كل عنصر هنا كأولوية أخيرة.
+     ═══════════════════════════════════════════════════════════════════ */
+  .view,.aod,.flash,.done,.mscrim{position:absolute;inset:0}
+  .menu{position:absolute;left:8px;top:38px}
+  .mbtn{position:absolute;top:8px;left:9px}
+  .promptbar{position:relative;margin:0 0 6px}   /* ⬆️ أعلى القراءة — داخل التدفق */
+  .badge{position:absolute;top:6px;right:6px;bottom:auto;left:auto}
+  .view{z-index:2}
+  .view.read-mode .vhead{padding-inline-start:56px}   /* مكان العدّاد في الزاوية اليمنى */
+  .menu,.promptbar,.mbtn,.badge{z-index:12}
+  .aod,.flash{z-index:9}
+  .done{z-index:14}
+
+.screen.bg-after_prayer .bgimg{background-image:url("data:image/jpeg;base64,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")}
+.screen.bg-morning .bgimg{background-image:url("data:image/jpeg;base64,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")}
+.screen.bg-evening .bgimg{background-image:url("data:image/jpeg;base64,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")}
+.screen.bg-sleep .bgimg{background-image:url("data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAQDAwQDAwQEBAQFBQQFBwsHBwYGBw4KCggLEA4RERAOEA8SFBoWEhMYEw8QFh8XGBsbHR0dERYgIh8cIhocHRz/2wBDAQUFBQcGBw0HBw0cEhASHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBz/wAARCAE4ATgDASIAAhEBAxEB/8QAHAABAQEBAQEBAQEAAAAAAAAAAQACAwQFBgcI/8QALxAAAgIBAwQBAwMEAgMAAAAAAAECESEDMUEEElFxYQWBkRMioRQyQlIjsQZDgv/EABgBAQEBAQEAAAAAAAAAAAAAAAABAgME/8QAIREBAQEBAAICAQUAAAAAAAAAAAERAgMSEzFRBCFBUmH/2gAMAwEAAhEDEQA/AP8AByfIuWSqhVG2FV02KiDy9xASWGD8imnuEar8gq5sUiYFZJ8F/wBDSCElnAVXsbyUFEh3J/G4EsjTsEhTKGgSob+SAmsAlwW3oN3gB3HCBoGA0HyKJgSYr2ZJsCeQTJvAEFuXgnkqCpeDLsSIC6BoWVWgM0ZaNNX9iChWDVDyQGXsRbEBt7AsUxomgFVVknVhHApAV16FElk1WAisMjZplQULLleA3Aa8lQ2CbKFYwVDwGQGvAD5JcADEGVYAkvIug8kBchfkSaAaexVkMor3AXsYr8m99wazuAJYJLBbUXAFVmVZpWDyyArYmi3LZAZrJC8otyKzaSBJi1eCeABbhI0DQVlkNYIDZVgkqL0AZHki2AeRT2AaCFqyeSQvfBUURBDfBRIi2IBLfkiugJ4oLyxtg0BNkQ7/AGAkF5FOiaCCyuyoArW6BispABCzIgFZsqsUV0BPYzRtmQBoKFmSBKrB4Rb2BGWuUa/kH6Io+CaF4Df2AbohrBBVkawVjXgIEhokioCV8mkXBclRLI7Fsy3AFdmq/ACUV22QRNcgGxDdhsBFZcDswg+BBvnkgEiABB5wVigJbk/JbiBngiogrI8YJ2iugJXnAM2lwZaAKBi3jAUA0DpLBXTJ/BBkeBwjKCjfBLD9DWb5HggzJkZa3IK0lRrYkiXyEKzgm63KqBu7dgN2aukZQrcqFOy2B/BpFEngmS3EA2ECAgvyNlgIkRYLkAaJYFrKF7gVfgE8mvQPcCB4sryIEmXBPYrAg3EALDJoi3CpsnlE8LJLIGXjYmrGgYEwWxZZEGWvkreSfwLALvIXkrqhavYis/YhaZAIoHaZWijS9g1kU/ANMBiNGVvk2giQXuV0VlDyKBCgJtk7JIWBhGiouKCIk6LcgG0ykVItwGNVYPAbkBEVDa5AtwFFVMCuwFKiYEBWKVhQy4KrZcABNeSeUWwA1SBDuCQA99gNP4JkGWirkrzQgDyRPyRFKKrJolgoVhFuTyCsI1SY1QKxTsAaI1aGijKGuSqnZNgRbkioIlsQ1QANWXIXYgSQ0FPA3QAlQkrZbAVUZao0n7J0AVQ2K2MvcCaIt9yWGBclQciBVYbjuDwFVZD2W/JSwAUTIqvfcABsWi2AEsFsyIgiIiByjPJpt8IEqRRX4FEn4EQSxYoqoslExQciA3RndiQRbFlFRbAO4CsoqoArwSZpByAoqBKzaV4QRnnBU2zTVGbCgtt0aSCrAty+xcgmwIhtFWAAnkkqICwZZbi1gASJksEwpbCgTbwTAGDbGrB/AC26M7iBBEEsEBp5INxsCX8GsoFsKVAVZNWZWRKLIotgTA1wG5JWxCM0xH45KgL0Kz7B7IYqkBVT+CbF/uJrAQCsBHaiasDTyYe5tqjNWwFJi3RRLt5ANiFqjNvgCwDYtYBKwqT/ACVr7g1QpAALc00FZAC2FoF8hUGNiSthLDAa8Eyi0AFwCWRe5XWCDLyRPBATQ0QoCQu2VCrpgCWR3ZIeSiYciSyEW2wrYhSwBZFZZnk0kEDWcj8CiX8gZW9GvY7E1yBmqNdqoxybCCiotsD8rkCYWmxaCqAmv4JLBJEwoa7hoqwTyAewaoeQYA6r5AX8lQUWFDQMCMyVmmwaCsRwasKJ7APAIuC4AJfBD2+CIJoSaGgL7imZdJjEoWy3JoVsBCGRW4RI0slRbYCacbURKxaCAqskn9jWzoAeSo1WLQWECjT+BlS23FK1ku2wM7kacKCuArKNNEsfcsgFkapbBgAygbpCwrIAiab2Fvg0vYXXPt4DJ0ZmXwBkqNJYB2FZqgom2VtADVBuLZUFHIbsdgaygKyLyRBotiSseCjIxXkmrHC9gaZBZpVQRnLGjSVFVhDEaVikFBE8Gkmyj+7c6RWL4CaKpUzDjZt5WCSfJUc6p/A7s6NUZoioWqLY0lguIwgqzSyxaA5pWxGsFtYA1yGxurMtZYxWSUSao0QZYM1JGAq2JoU7BgGxm8Gm0ZaCwXQMWgeEFFBsNiBknuLCsgDwQTVkFbdItw3FASVC14GhaCM1RpLBb7m0qCM7GkLWQCNj23ySVmu18BElXB17f+O2Yiro9WpHt0sFZteXtpIK/k2DyFDA1KOPklH8hNBU7HZmsNg1hIUseSeNiWwF24wZqnk6JOgoGsomi24FK0F1mUfBimztLKMLcDLWApGpJMKoDDVGM36OlfcKwRdYomaarYHkqstYwH2NMJOkFYeGJNWGxANmcm2sGQoaInsQNaaFE14JANmgSTRqKvcIjUUFJ4NVQRKNPfApJkkaCFLJpMoo3Sqys0xie7V0nLSusHjirSPqw/5NClu0Vz7uPkdtPYXE6uDUnewNV6CyuLi1uhUTozK3wRdZ7aYONHbtaClasprn2cme3ODv2+EFVhrINc0q3K+5HSrxWxlKm7Iawt8mlHAyS3GrVhdY2MN/B1caMuOfgGubRlRavwdUmyYXXLZ/ASR0lGjnVBXNrPwL/ke3gkqIrniwaOjSvBlrBVc3EqZqqQXZF1kzWfk6Mw3YAyGsEFbWWTRKLTNYZUCS4NEo4s0shNCNLGWSQ4REND/2SJxKjcdkbjlhGFJG4qkgzW4qnsfW6FKWlS3R8uPg+j0Eu3US/wBixy7+nLq+nenq3/izzONp/B+i1ujXUaTr+7j2fGlouMnFrYrHPevEoNtmlp19z0uFYMduSY6a59lIy4Yvk9HbgO1O7KmuKX5Ndq5WTXYkVOvkGuM6JQOnZbFwrPBF1y7O4lFr0dVF2EojDXJozVnSSyPaF1waoFk6uJzC6zJI5tHVg1gjUrj2u7JpG23mzPkLrm0+AeGbcTPbeCNMGas241QFVmtjMlR04MSA5p4I1REabWBZNo0mVkRZqrJqyjZEao0leRSwWxUMUaasoNN7HRIM1ROqjRmKSrybSsrFpgjvpTqSe1HKEWmdoLNIM2v0fRakdXSUk8+A676d3QevCOeUfO6LX/Rkr25R+o6ScdaKapxNz93k7t4ux+Rlpb4OX6WeT9X1v0RyUtbRjcVvE+NLp63TT+SWN8+WdfT5j02Y/SebPoy0e05y0vyR09niWm0h7K4PVKHCMdj2oLrz1knC0d5aVgtKsfkGvMvQSWT1S084WDH6VtBdebtJq8I9Eo1sjLh/IXXmpNHOkex6XZG+WcJRzgiyuEo1ky0dZQbdoGqVBvXBxzRmqOzjizn2ttka1hoyzpKLMBXOXoz22dGjIVl/JlqzTi7M7BRsiEgoTtGljk5ptEpPJDHbY3xg4xbR1jLOQjojSSfsF2vZmkqKzTGKXBtYCJqMbKxa3FWzrGk9jEFk65bWMBm0vzR20oZsyonbT4KxaYK2fW+n9ZLQkotXpvc+Zza2PRptPCLHLubH7jotda6XZK4+Tr1v0PS62PdGtPVebrDPyv07qp9JNODdcxb3P1fQfU9PXVdzUlwzpLv28Hk565u8vzXVfR9fpW/1Iuk9+DxS6dr91YP6OnHVioSSafk+f1X0fp9Z/tTg/jYXj8HH6n+z8E9FvCW5l6DWKyfrtX/x7Ugm9Ptl44PDP6L1Ef8A1ty5aM+td55+b/L8+9K18nP9FvJ92f0zWTzpS+cHGf0zWnJdkHS3Jjc8s/L5L0G81gz+lR9tfSNZusL2al0WloR7tSVtDF+WPhLpnN4jaOc9KOi2t5H1ep6mKtaSqJ82cO9eyVvm2/bwyu8uzlKPjk9ktNXXg5ShG6RHWV5ZRp1RzlHB6pRuzlJIjcryuLT+Aex3aMSwGpXFs5yVHbs5MSVEalcnwZrNnRK/sYYaZZho1JtGXlEaHGxE8EBjHkEre6MXYphp0VoboIpvyabrgqNRlZtSaMRcb8G6W9oMuqnhHSEubPPFdyeDcE0Vmx6Yz9nVNnkUqZ0WpQ1i8vbp6lHo0px2aPnR1n4OkddLzZXO8vq9kZR/a0b0dNxTZ4Ia6ebo9MeolFXeA52V9HRXPg9ujqOLtWvk+LDq53hrtPZpdXSyrNSuXXNfoun+q6un/l3LamfX6f6xpyVTXa/Z+Qh1mmkk7TZ6I9Vp9tReTc6ebrwx+vj1+hPH6iR0j1em44ms/J+Q/q4xX91G4dZBxxNF9nP4H6bX6rQjF/8AJG/e54NXrdJKo02fFl1UHztk80+tjBt2S1vnwvo6/WzjGXaqPj62tLUeW/Iz6q/XycZay7XbRm1354xiSrHk5yTSwZeus2rZ5dTq5cUjLtJXZx8o5ShFJtzS9s8Or1E5PLdezjPUd7kdZzXtnPTS/vVnCTj/ALHklqeQepZNbnL0vt37kYnKso8rm2Hf4DXq7dzZzmrVGf1JLx9ycnJZDUjKaWG8lJpLBzk0nncu/wCPyRrC9jnjlhKTfJlhpOSWKsjLIiuKeBMLJpbkbaTaNrVmub9nO6QoqY9C1IyeVXo329yuLtHm7hi6dptBmx2jaxRtTa2bOa1bxJX88nSPZJftf2eCstrUfOfYrVTw00H6dbmXFphHpivDT9DbzZ5oPydv1pbNX7KzY7RnwdI60ouk6OMJxeGmmdKjLlBix7NPqlJPuS+x3h1EXzSPnKKq+PZuGnb3x7K53mPpLqN6Tfpj/UuO8WjwdtbyS+5r9RRq52XWbzHs/rJYpGv66fDpHkjqx8yb+EZlrKL/ALaT/wBmQ9Y9kus1JbSdHOWvOTzKTPK+rSxa/wDmJxl11PEW/bGrOP8AH0Jamqt217MS1prDmq9nzv6yb27V6RmWtqNf3sa18de56zaxJM4z1W96r0eJ6sn/AJOvYdz8v8k1qcO8p/Bzk03Zx7p3u79mv3Lyw3OcMnbfkyvBScuEHbLdpBU1jdGcJcs124ttfk5ycVhtV7I013+EYk2+cs0orj8hJpL/AB/IWOTtvCGWDL1Esd34Rl6iXn8BS2ZsO+/IOd+SKXkjDb+SDWOaxwKwiIjTSabsbIgiLOxEVGkzUWRBHVakksNpG1rSddyTIgzY6rVhs4uvZrv0vlfYiLrOFS03nu/g6Kem9poiEZxru0n/AJ/wK1NJbyb9IiLqeq/qNNbRbKXVf6xSIhp6xzevN476/gw5+XZEFkg7/Id1siAVFtj2uP8Ac0vbIgaHLTWzb9I5vXXEc/LIiNYy+ol8J/CL9aaX9zIguRj9Rzvc1Tlnj5IiA7oR5t+EYlq+EkRBqRlyk922ZckufwRAjPd8GbZEGpBbC/kiCsttYsiIK//Z")}
+.screen.bg-general .bgimg{background-image:url("data:image/jpeg;base64,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")}
+.screen.bg-free .bgimg{background-image:url("data:image/jpeg;base64,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")}
+
+  /* ═════════ القائمة المنسدلة ☰ (الزاوية العلوية اليسرى) ═════════ */
+  .mbtn{position:absolute;top:8px;left:9px;z-index:11;width:26px;height:26px;border-radius:50%;
+    background:rgba(20,26,31,.85);border:1px solid rgba(255,255,255,.14);
+    display:flex;align-items:center;justify-content:center;font-size:12px;color:#dfe7ec;cursor:pointer}
+  .mbtn:active{background:rgba(45,212,191,.25)}
+  .mbtn.on{background:#0f3f3c;border-color:#1c6b63;color:#c8f7f0}
+
+  .mscrim{position:absolute;inset:0;background:rgba(0,0,0,.45);z-index:9;display:none}
+  .mscrim.on{display:block}
+
+  .menu{position:absolute;left:8px;top:38px;width:206px;max-height:calc(100% - 48px);overflow-y:auto;
+    background:rgba(15,20,25,.97);border:1px solid rgba(255,255,255,.13);border-radius:15px;
+    padding:5px;z-index:12;display:none;box-shadow:0 14px 34px rgba(0,0,0,.75);backdrop-filter:blur(10px)}
+  .menu.on{display:block;animation:mpop .15s ease-out}
+  @keyframes mpop{from{opacity:0;transform:translateY(-6px) scale(.98)}to{opacity:1;transform:none}}
+  .menu::-webkit-scrollbar{width:3px}
+  .menu::-webkit-scrollbar-thumb{background:rgba(255,255,255,.2);border-radius:3px}
+
+  .mh{display:flex;align-items:center;gap:6px;padding:8px 8px 6px;position:sticky;top:0;
+    background:rgba(15,20,25,.98);border-bottom:1px solid rgba(255,255,255,.08);z-index:2}
+  .mh .t{font-size:11.5px;font-weight:700;flex:1}
+  .mh .x{width:20px;height:20px;border-radius:50%;background:rgba(255,255,255,.07);
+    display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--dim);cursor:pointer}
+  .mh .b{width:20px;height:20px;border-radius:50%;background:rgba(45,212,191,.16);
+    display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--teal);cursor:pointer}
+
+  .msec{font-size:8px;color:var(--dim2);padding:7px 8px 3px;letter-spacing:.4px;font-weight:600}
+  .mrow{display:flex;align-items:center;gap:7px;padding:6px 8px;border-radius:9px;font-size:10.5px;cursor:pointer}
+  .mrow:hover,.mrow:active{background:rgba(255,255,255,.08)}
+  .mrow .i{width:14px;text-align:center;flex:0 0 auto;font-size:11px}
+  .mrow .t{flex:1;line-height:1.35}
+  .mrow .v{font-size:8.5px;color:var(--dim);flex:0 0 auto}
+  .mrow .c{color:var(--dim2);font-size:10px}
+  .mrow.act .i{color:var(--teal)}
+  .msep{height:1px;background:rgba(255,255,255,.08);margin:4px 7px}
+
+  .msw{width:27px;height:15px;border-radius:8px;background:#3a444c;position:relative;flex:0 0 auto}
+  .msw:after{content:"";position:absolute;top:2px;right:2px;width:11px;height:11px;border-radius:50%;
+    background:#e9eef2;transition:.16s}
+  .msw.on{background:var(--teal)} .msw.on:after{right:14px}
+
+  .mseg{display:flex;gap:3px;padding:1px 8px 6px}
+  .mseg span{flex:1;text-align:center;font-size:8.5px;padding:4px 0;border-radius:7px;
+    background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);color:var(--dim);cursor:pointer}
+  .mseg span.on{background:#0f3f3c;border-color:#1c6b63;color:#c8f7f0}
+  .mnote{font-size:8px;color:var(--dim2);padding:2px 8px 7px;line-height:1.55}
+
+  .pinch{position:absolute;inset-inline-end:18px;top:66px;width:70px;height:70px;opacity:0;pointer-events:none;z-index:8}
+  .pinch.go{animation:pinchfade 1s ease-out}
+  @keyframes pinchfade{0%{opacity:1}80%{opacity:1}100%{opacity:0}}
+  .pinch i{position:absolute;width:17px;height:17px;border-radius:50%;background:#dbeafe;box-shadow:0 0 14px rgba(219,234,254,.8)}
+  .pinch i.f{top:6px;inset-inline-start:6px} .pinch i.t{bottom:6px;inset-inline-end:6px}
+  .pinch.go i.f{animation:tapa .5s ease-in-out 2} .pinch.go i.t{animation:tapb .5s ease-in-out 2}
+  @keyframes tapa{0%,100%{transform:translate(0,0)}50%{transform:translate(22px,22px)}}
+  @keyframes tapb{0%,100%{transform:translate(0,0)}50%{transform:translate(-22px,-22px)}}
+
+  /* ═══════ اللوحة ═══════ */
+  .panel{flex:1 1 430px;min-width:320px;max-width:540px;display:flex;flex-direction:column;gap:13px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px 15px}
+  .card h2{font-size:13px;margin:0 0 10px;color:var(--dim);font-weight:600}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+  .act{display:flex;align-items:center;justify-content:center;gap:8px;background:var(--panel2);
+    border:1px solid var(--line);border-radius:13px;padding:11px 9px;font-size:13px;font-weight:600;
+    color:var(--txt);cursor:pointer;transition:.15s;text-align:center}
+  .act:hover{border-color:#33414b;background:#1a2128}
+  .act:active{transform:scale(.98)}
+  .act.primary{background:linear-gradient(180deg,#134e4a,#0f3f3c);border-color:#1c6b63;color:#d6fbf6}
+  .act.primary:hover{border-color:#2dd4bf}
+  .act.wide{grid-column:1/-1}
+  .act .k{font-size:10px;color:var(--dim);font-weight:500}
+  .screens{display:flex;gap:7px;flex-wrap:wrap}
+  .tab{font-size:12px;padding:7px 12px;border-radius:999px;border:1px solid var(--line);
+    background:var(--panel2);color:var(--dim);cursor:pointer}
+  .tab.on{background:#0f3f3c;border-color:#1c6b63;color:#c8f7f0}
+  .stats{display:flex;gap:9px}
+  .stat{flex:1;background:var(--panel2);border:1px solid var(--line);border-radius:13px;padding:9px;text-align:center}
+  .stat b{display:block;font-size:20px;font-variant-numeric:tabular-nums}
+  .stat span{font-size:10px;color:var(--dim)}
+  .log{max-height:170px;overflow:auto;font-size:11.5px;display:flex;flex-direction:column;gap:5px}
+  .log div{padding:6px 9px;border-radius:9px;background:var(--panel2);border:1px solid var(--line);color:#c4d1da}
+  .log div.ok{border-color:#1c6b63;background:#0d2a28;color:#bff3ec}
+  .log div.strong{border-color:#15803d;background:#0b2416;color:#bbf7d0}
+  .log div.gold{border-color:#a16207;background:#2a1f05;color:#fde68a}
+  .log div.bad{border-color:#7c2d12;background:#2a1408;color:#fed7aa}
+  .log time{color:var(--dim2);font-size:10px;margin-inline-start:6px}
+  .notes{font-size:12px;color:var(--dim);line-height:1.85}
+  .notes b{color:#cfe9e5} .notes code{background:#1a2128;border:1px solid var(--line);border-radius:6px;padding:1px 5px;font-size:11px}
+  .haptics{display:flex;gap:8px;align-items:center;font-size:12px;color:var(--dim);
+    border:1px dashed #2a343d;border-radius:12px;padding:8px 11px;flex-wrap:wrap}
+  .hdot{width:9px;height:9px;border-radius:50%;background:#3a444c;flex:0 0 auto;transition:.15s}
+  .hdot.click.on{background:var(--teal);box-shadow:0 0 12px var(--teal)}
+  .hdot.notif.on{background:var(--green);box-shadow:0 0 14px var(--green)}
+  .hdot.win.on{background:var(--gold);box-shadow:0 0 16px var(--gold)}
+
+  /* ═════════✨ اللغة البصرية الجديدة (v2) ═════════ */
+  /* حلقة العدّ: تدرّج زمردي + توهّج ناعم */
+  .ring .prog{stroke:url(#ringGrad); filter:drop-shadow(0 0 5px rgba(41,199,154,.55))}
+  /* نص الأذكار بخط نسخي (في التطبيق الحقيقي: خط أميري المرفق) */
+  .dhikr,.rdText,.rdTitle,#doneTitle,.hbig{
+    font-family:"Noto Naskh Arabic","Traditional Arabic","Al Bayan","Scheherazade New",serif}
+  .num{font-variant-numeric:tabular-nums}
+  /* مقبض التشغيل المفعّل: تدرّج زمردي */
+  .msw.on,.sw.on{background:linear-gradient(90deg,var(--emerald),var(--mint)) !important;
+    box-shadow:0 0 7px rgba(41,199,154,.5)}
+  /* شاشة الإحصاءات */
+  .hbig{font-size:34px;font-weight:700;color:var(--emerald);text-align:center;line-height:1.15}
+  .hstat{display:flex;align-items:flex-end;gap:4px;height:62px;padding:8px 4px 0}
+  .hbar{flex:1;background:linear-gradient(180deg,var(--emerald),var(--teal));border-radius:4px 4px 0 0;opacity:.9}
+  .hbar.dim{background:rgba(255,255,255,.15)}
+  .hsum{display:flex;justify-content:space-between;color:var(--dim);font-size:9px;padding:2px 4px 0}
+  .hcard{display:flex;align-items:flex-start;gap:9px;background:rgba(255,255,255,.05);
+    border:1px solid rgba(255,255,255,.09);border-radius:12px;padding:8px 10px;margin:6px 8px 0;
+    text-align:right}
+  .hcard .hi{font-size:19px;flex:none;line-height:1.2}
+  .hcard .ht{font-size:11.5px;font-weight:700;display:block}
+  .hcard .hd{font-size:9.5px;color:var(--dim);line-height:1.55;display:block;margin-top:2px}
+  .hcard .hb{flex:1;min-width:0}
+</style>
+</head>
+<body>
+
+<h1>محاكي «سُبحة» — مجموعات الأذكار ⌚️</h1>
+<div id="errBanner" style="display:none;background:#7f1d1d;border:1px solid #b91c1c;color:#fee2e2;
+  padding:9px 12px;border-radius:10px;font-size:12.5px;margin:0 0 12px"></div>
+<p class="sub">٦ مجموعات · انتقال سلس مرتّب بين الأذكار · رسالة إغلاق عند إتمام المجموعة · عدّ من الودجت.</p>
+
+<div class="wrap">
+
+  <!-- ═══════ الساعة ═══════ -->
+  <div class="watch-stage">
+    <div class="watch">
+      <div class="strap"></div>
+      <div class="case">
+        <div class="crown"></div><div class="sidebtn"></div>
+        <div class="screen" id="screen">
+          <div class="bgimg" id="bgimg"></div>
+          <div class="bgdim" id="bgdim"></div>
+          <div class="glow"></div>
+
+          <!-- ① العدّ -->
+          <div class="view on" id="v-counter">
+            <div class="vhead">
+              <div style="display:flex;align-items:center;gap:5px;justify-content:center;padding:0 28px">
+                <span class="setname" id="setName">أذكار بعد الصلاة</span>
+                <span class="meta" id="posTag" style="margin:0">4/7</span>
+              </div>
+              <div class="dhikr" id="dhikr">سُبْحَانَ اللَّه</div>
+              <div class="meta" id="meta">اليوم: 0</div>
+            </div><!-- /vhead -->
+
+            <!-- 🕐 العدّاد: الزاوية العلوية اليمنى في وضع القراءة -->
+            <div class="badge" id="badge">
+              <svg viewBox="0 0 56 56">
+                <circle class="bTrack" cx="28" cy="28" r="25"></circle>
+                <circle class="bProg" id="bProg" cx="28" cy="28" r="25"
+                        stroke-dasharray="157.08" stroke-dashoffset="157.08"></circle>
+              </svg>
+              <div style="text-align:center;position:relative">
+                <div class="bNum" id="bNum">0</div>
+                <div class="bTarget" id="bTarget">33</div>
+              </div>
+            </div><!-- /badge -->
+
+            <div class="mbtn" id="menuBtn" title="القائمة والإعدادات">☰</div>
+            <div class="mscrim" id="mscrim"></div>
+            <div class="menu" id="menu"></div>
+
+            <!-- وضع القراءة: ⬆️ شريط التلقين والرؤية من بعيد أعلى الشاشة فوق اسم الذكر -->
+            <div id="readLayout" class="fs1">
+              <div class="promptbar" id="promptBar">
+                <div class="pbtn" id="pbPlay">▶</div>
+                <div class="pbar2"><i id="pbProg"></i></div>
+                <div class="plabel" id="pbLabel">هادئ ٤٠</div>
+                <div class="pbtn" id="pbSpeed">⏩</div>
+                <div class="pbtn" id="pbDist">👁️</div>
+              </div>
+              <div class="rdScroll" id="rdScroll">
+                <div class="rdTitle" id="rdTitle"></div>
+                <div class="rdText" id="rdText"></div>
+              </div>
+            </div><!-- /readLayout -->
+
+            <div id="ringLayout" style="display:flex;flex-direction:column;flex:1;min-height:0">
+              <div class="ringwrap">
+                <div class="ring" id="ring">
+                  <div class="syshl"></div>
+                  <svg viewBox="0 0 150 150">
+                    <defs>
+                      <linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1">
+                        <stop offset="0%"   stop-color="#29c79a"/>
+                        <stop offset="60%"  stop-color="#59e0ad"/>
+                        <stop offset="100%" stop-color="#2dd4bf"/>
+                      </linearGradient>
+                    </defs>
+                    <circle class="track" cx="75" cy="75" r="68"></circle>
+                    <circle class="prog" id="prog" cx="75" cy="75" r="68" stroke-dasharray="427.26" stroke-dashoffset="427.26"></circle>
+                  </svg>
+                  <div style="text-align:center">
+                    <div class="num" id="num">0</div>
+                    <div class="of" id="of">/ 33</div>
+                  </div>
+                </div>
+              </div>
+              <div class="track-row" id="trackRow"></div>
+              <div class="nextline" id="nextLine">التالي: الْحَمْدُ لِلَّه</div>
+            </div><!-- /ringLayout -->
+
+            <div class="vfoot">
+              <div class="status" id="statusTxt">العدّ مستمر — حتى 10:42</div>
+              <div class="btnrow">
+                <button class="wbtn icon" id="btnReset" title="تصفير الذكر الحالي">↺</button>
+                <button class="wbtn icon" id="btnDist" title="الرؤية من بعيد">👁️</button>
+                <button class="wbtn icon" id="btnPrompt" title="التلقين">📜</button>
+                <button class="wbtn" id="btnMotion" title="محاكاة حركة الرسغ (وضع العدّ بالحركة)">✋</button>
+                <button class="wbtn icon" id="btnCrown" title="نقرة تاج (وضع العدّ بالتاج)">🎡</button>
+                <button class="wbtn" id="btnMenu" title="كل الإعدادات">☰ القائمة</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- ② المجموعات -->
+          <div class="view" id="v-sets">
+            <div class="vhead"><div class="dhikr" style="font-size:12px">المجموعات</div>
+              <div class="meta">اختر مجموعة — تبدأ من أول ذكر</div></div>
+            <div class="setslist" id="setsList"></div>
+            <div class="vfoot"><button class="wbtn" id="btnSetsBack">رجوع للعدّ</button></div>
+          </div>
+
+          <!-- ③ الودجت -->
+          <div class="view" id="v-stack">
+            <div class="vhead"><div class="dhikr" style="font-size:12px">Smart Stack</div>
+              <div class="meta">اسحب للأعلى من وجه الساعة</div></div>
+            <div class="stack">
+              <div class="wcard dimcard"><div class="mini"></div>
+                <div><div class="ttl" style="color:var(--dim)">الطقس</div><div class="cnt" style="font-size:13px;color:var(--dim)">34°</div></div></div>
+              <div class="wcard hl">
+                <div class="mini"><svg viewBox="0 0 36 36" width="32" height="32">
+                  <circle cx="18" cy="18" r="15" fill="none" stroke="rgba(255,255,255,.15)" stroke-width="3.5"></circle>
+                  <circle id="stackProg" cx="18" cy="18" r="15" fill="none" stroke="#2dd4bf" stroke-width="3.5"
+                          stroke-linecap="round" stroke-dasharray="94.2" stroke-dashoffset="94.2"></circle></svg></div>
+                <div>
+                  <div class="st" id="stackSet">أذكار بعد الصلاة</div>
+                  <div class="ttl" id="stackTitle">سُبْحَانَ اللَّه</div>
+                  <div class="cnt" id="stackCount">0 / 33</div>
+                </div>
+                <div class="plus" id="stackPlus">＋</div>
+              </div>
+              <div class="wcard dimcard"><div class="mini"></div>
+                <div><div class="ttl" style="color:var(--dim)">النشاط</div><div class="cnt" style="font-size:13px;color:var(--dim)">320/500</div></div></div>
+            </div>
+            <div class="vfoot"><div class="status">الإيماءة داخل الودجت تعمل حتى دون فتح التطبيق</div></div>
+          </div>
+
+          <!-- ④ الإعدادات -->
+          <div class="view" id="v-settings">
+            <div class="vhead"><div class="dhikr" style="font-size:12px">الإعدادات</div></div>
+            <div class="setlist">
+              <div class="srow"><span>الانتقال التلقائي</span><div class="sw on" data-k="auto"></div></div>
+              <div class="srow"><span>الاهتزاز</span><div class="sw on" data-k="hap"></div></div>
+              <div class="srow"><span>الوضع الليلي</span><div class="sw" data-k="night"></div></div>
+              <div class="srow" style="border:none;padding-top:10px;color:var(--dim2);font-size:10px;line-height:1.5">
+                الإيماءة: نقرتان بالسبابة والإبهام = ذكر واحد (تعمل والشاشة مضيئة فقط)</div>
+            </div>
+            <div class="vfoot"><button class="wbtn" id="btnSetBack">رجوع للعدّ</button></div>
+          </div>
+
+          <!-- رسالة إتمام المجموعة -->
+          <div class="done" id="doneView">
+            <div class="seal">✅</div>
+            <div class="ttl" id="doneTitle">تمّت أذكار ما بعد الصلاة</div>
+            <div class="dua" id="doneDua">اللَّهُمَّ أَعِنِّي عَلَى ذِكْرِكَ وَشُكْرِكَ وَحُسْنِ عِبَادَتِكَ</div>
+            <div class="stats">
+              <div class="srow2"><span>المجموعة</span><b id="dSet">—</b></div>
+              <div class="srow2"><span>عدد الأذكار</span><b id="dItems">—</b></div>
+              <div class="srow2"><span>الضغطات</span><b id="dTaps">—</b></div>
+              <div class="srow2"><span>المدة</span><b id="dTime">—</b></div>
+            </div>
+            <div class="btns">
+              <button class="wbtn prom" id="dRestart">↺ إعادة المجموعة</button>
+              <button class="wbtn" id="dOther">☰ مجموعة أخرى</button>
+              <button class="wbtn" id="dClose">إغلاق</button>
+            </div>
+          </div>
+
+          <div class="aod" id="aod">
+            <div class="big" id="aodNum">0</div>
+            <div class="lbl" id="aodLbl">الشاشة خافتة (يد للأسفل)</div>
+            <div class="aodmode" id="aodMode">ارفع رسغك ثم انقر مرتين</div>
+          </div>
+          <div class="flash" id="flash"><div class="ck">✔</div><div class="tx" id="flashTx"></div></div>
+          <div class="toast" id="toast"></div>
+          <div class="pinch" id="pinch"><i class="f"></i><i class="t"></i></div>
+        </div>
+      </div>
+      <div class="strap down"></div>
+    </div>
+  </div>
+
+  <!-- ═══════ اللوحة ═══════ -->
+  <div class="panel">
+
+    <div class="card">
+      <h2>الإيماءة والتشغيل</h2>
+      <div class="grid2">
+        <div class="act primary wide" id="actGesture">
+          <span>☝️🤏 محاكاة الضغط المزدوج<br><span class="k">نقرتان بالإصبعين → ذكر واحد</span></span></div>
+        <div class="act" id="actTap">👆 لمس الشاشة<br><span class="k">على الحلقة</span></div>
+        <div class="act" id="actSkip">⏭ التالي<br><span class="k">تخطّي الذكر</span></div>
+        <div class="act" id="actWrist">⌚️ اقلب اليد<br><span class="k">وضع خافت</span></div>
+        <div class="act" id="actDecrement">− تراجع<br><span class="k">تصحيح خطأ</span></div>
+        <div class="act" id="actStack">📚 عدّ من الودجت<br><span class="k">بلا فتح التطبيق</span></div>
+        <div class="act" id="actSets">☰ المجموعات<br><span class="k">٦ مجموعات</span></div>
+        <div class="act" id="actFinish">🏁 إنهاء الجلسة<br><span class="k">للتسبيح المفتوح</span></div>
+        <div class="act" id="actRead">📖 وضع القراءة<br><span class="k">النص كاملًا</span></div>
+        <div class="act" id="actFont">🔠 حجم الخط<br><span class="k">صغير · متوسط · كبير</span></div>
+        <div class="act" id="actPos">⇋ موضع العدّاد<br><span class="k">يسار · يمين</span></div>
+        <div class="act" id="actPrompt">📜 تشغيل التلقين<br><span class="k">تمرير تلقائي</span></div>
+        <div class="act" id="actDist">👁️ رؤية من بعيد<br><span class="k">خط أكبر وأسمك</span></div>
+        <div class="act" id="actTry">🧪 جرّب التلقين<br><span class="k">على آية الكرسي</span></div>
+        <div class="act" id="actMenu">☰ القائمة المنسدلة<br><span class="k">كل الإعدادات</span></div>
+        <div class="act" id="actBg">🖼️ خلفية المجموعة<br><span class="k">تفعيل · إيقاف</span></div>
+        <div class="act" id="actWidgetCfg">🧩 إعدادات الودجت<br><span class="k">النمط · الزر · الاسم</span></div>
+      </div>
+      <div class="haptics" style="margin-top:11px">
+        <span>الإشارات:</span>
+        <span class="hdot click" id="hClick"></span> عادي (ذكر)
+        <span class="hdot notif" id="hNotif"></span> قوي (اكتمل ذكر)
+        <span class="hdot win" id="hWin"></span> مزدوج 🎉 (تمّت المجموعة)
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>الشاشات والمؤشرات</h2>
+      <div class="screens">
+        <div class="tab on" data-v="counter">العدّ</div>
+        <div class="tab" data-v="sets">المجموعات</div>
+        <div class="tab" data-v="stack">الودجت</div>
+        <div class="tab" data-v="settings">الإعدادات</div>
+      </div>
+      <div class="stats" style="margin-top:12px">
+        <div class="stat"><b id="stTotal">0</b><span>إجمالي اليوم</span></div>
+        <div class="stat"><b id="stCount">0</b><span>العدد الحالي</span></div>
+        <div class="stat"><b id="stPos">4/7</b><span>موضع الذكر</span></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>سجل الأحداث</h2>
+      <div class="log" id="log"></div>
+    </div>
+
+    <div class="card">
+      <h2>عن هذه الميزة</h2>
+      <div class="notes">
+        ✅ <b>الانتقال السلس:</b> عند إتمام ذكر (٣٣ مثلًا) يظهر وميض أخضر «أكملت»، ويتحرّك اسم الذكر التالي
+        بحركة <code>اسحب للأعلى</code> مع اهتزاز مختلف — فتنتقل بلا نظر إلى الشاشة.<br><br>
+        ✅ <b>رسالة الإغلاق:</b> بعد آخر ذكر في المجموعة تظهر شاشة ختامية: عنوان + دعاء ختامي + ملخّص
+        (المجموعة، عدد الأذكار، الضغطات، المدة) + زر «إعادة المجموعة» أو «مجموعة أخرى»، مع اهتزاز مزدوج لا تخطئه.<br><br>
+        ✅ <b>الترتيب محفوظ:</b> شريط التقدّم أعلى الحلقة يبيّن موقعك في المجموعة، ويظهر «التالي: …» تحته.<br><br>
+        📜 <b>التلقين:</b> يتحرك النص تلقائيًا بمعدّل (عدد الكلمات ÷ الوتيرة) فتنتهي القراءة في زمنها الطبيعي،
+        ثم يتوقف بإشارة اهتزاز. ثلاث وتيرات: هادئ ٤٠ · متوسط ٦٠ · سريع ٩٠ كلمة/دقيقة.
+        والمكسب الهندسي: أثناء التلقين لا يوجد <code>ScrollView</code>، لذا <b>لا تتعارض الإيماءة مع تمرير النظام</b>.<br><br>
+        👁️ <b>الرؤية من بعيد:</b> خط أكبر بـ ٤٢٪ + <b>عريض</b> + تباعد أسطر أوسع + تعزيز سماكة محيط الحرف
+        (<code>-webkit-text-stroke</code> هنا، وفي التطبيق: أسمك خط + خط Amiri/Scheherazade الذي تشكيله مرسوم كبيرًا).<br><br>
+        ⚠️ <b>حقيقة تقنية عن التشكيل:</b> علامات التشكيل تُرسم كجزء من كتلة الحرف نفسه في الخط، لذا لا يمكن
+        تكبيرها وحدها مع فصلها — لكنها تكبر تلقائيًا مع تكبير الخط، وتظهر أوضح بالخط العريض ومع خط تشكيله كبير أصلًا.<br><br>
+        ⚠️ <b>راجع النصوص والأعداد</b> مع «حصن المسلم» قبل النشر — النصوص هنا للعرض التقني ويمكن تعديلها كلها من ملف
+        <code>Shared.swift</code> بلا أي تغيير في الواجهة.
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   البيانات — مطابقة لمصفوفة adhkarSets في Shared.swift
+   n: 0 تعني «بلا حد»
+   ═══════════════════════════════════════════════════════════ */
+const SETS = [
+  { id:"after_prayer", ico:"🕌", title:"أذكار بعد الصلاة",
+    closeTitle:"تمّت أذكار ما بعد الصلاة",
+    closeDua:"اللَّهُمَّ أَعِنِّي عَلَى ذِكْرِكَ وَشُكْرِكَ وَحُسْنِ عِبَادَتِكَ",
+    items:[
+      {t:"أَسْتَغْفِرُ اللَّه", n:3},
+      {t:"اللَّهُمَّ أَنْتَ السَّلَامُ…", n:1},
+      {t:"آيَةُ الْكُرْسِيّ", n:1},
+      {t:"سُبْحَانَ اللَّه", n:33},
+      {t:"الْحَمْدُ لِلَّه", n:33},
+      {t:"اللَّهُ أَكْبَر", n:33},
+      {t:"لَا إِلَهَ إِلَّا اللَّه وَحْدَهُ…", n:1}
+    ]},
+  { id:"morning", ico:"🌅", title:"أذكار الصباح",
+    closeTitle:"أتممت أذكار الصباح",
+    closeDua:"أَصْبَحْنَا وَأَصْبَحَ الْمُلْكُ لِلَّه — بارك الله يومك",
+    items:[
+      {t:"آيَةُ الْكُرْسِيّ", n:1},
+      {t:"الْمُعَوِّذَات", n:3},
+      {t:"أَصْبَحْنَا وَأَصْبَحَ الْمُلْكُ لِلَّه", n:1},
+      {t:"اللَّهُمَّ بِكَ أَصْبَحْنَا", n:1},
+      {t:"سَيِّدُ الِاسْتِغْفَارِ", n:1},
+      {t:"اللَّهُمَّ عَافِنِي فِي بَدَنِي", n:3},
+      {t:"بِسْمِ اللَّهِ الَّذِي لَا يَضُرُّ…", n:3},
+      {t:"رَضِيتُ بِاللَّهِ رَبًّا", n:3},
+      {t:"سُبْحَانَ اللَّهِ وَبِحَمْدِهِ", n:100}
+    ]},
+  { id:"evening", ico:"🌙", title:"أذكار المساء",
+    closeTitle:"أتممت أذكار المساء",
+    closeDua:"أَمْسَيْنَا وَأَمْسَى الْمُلْكُ لِلَّه — أحسن الله مساءك",
+    items:[
+      {t:"آيَةُ الْكُرْسِيّ", n:1},
+      {t:"الْمُعَوِّذَات", n:3},
+      {t:"أَمْسَيْنَا وَأَمْسَى الْمُلْكُ لِلَّه", n:1},
+      {t:"اللَّهُمَّ بِكَ أَمْسَيْنَا", n:1},
+      {t:"سَيِّدُ الِاسْتِغْفَارِ", n:1},
+      {t:"بِسْمِ اللَّهِ الَّذِي لَا يَضُرُّ…", n:3},
+      {t:"اللَّهُمَّ إِنِّي أَعُوذُ بِكَ…", n:1},
+      {t:"سُبْحَانَ اللَّهِ وَبِحَمْدِهِ", n:100}
+    ]},
+  { id:"sleep", ico:"🛏", title:"أذكار النوم",
+    closeTitle:"أتممت أذكار النوم",
+    closeDua:"بِاسْمِكَ اللَّهُمَّ أَمُوتُ وَأَحْيَا — نومًا هنيئًا",
+    items:[
+      {t:"آيَةُ الْكُرْسِيّ", n:1},
+      {t:"الْمُعَوِّذَات مَعَ النَّفْث", n:3},
+      {t:"بِاسْمِكَ اللَّهُمَّ أَمُوتُ وَأَحْيَا", n:1},
+      {t:"سُبْحَانَ اللَّه", n:33},
+      {t:"الْحَمْدُ لِلَّه", n:33},
+      {t:"اللَّهُ أَكْبَر", n:34}
+    ]},
+  { id:"general", ico:"✨", title:"أذكار متنوعة",
+    closeTitle:"أتممت الأذكار المتنوعة",
+    closeDua:"وَالْبَاقِيَاتُ الصَّالِحَاتُ خَيْرٌ — أحسنت",
+    items:[
+      {t:"سُبْحَانَ اللَّهِ وَبِحَمْدِهِ", n:100},
+      {t:"سُبْحَانَ اللَّهِ الْعَظِيمِ", n:100},
+      {t:"لَا إِلَهَ إِلَّا اللَّه وَحْدَهُ…", n:100},
+      {t:"أَسْتَغْفِرُ اللَّه وَأَتُوبُ إِلَيْهِ", n:100},
+      {t:"اللَّهُمَّ صَلِّ عَلَى مُحَمَّد", n:100},
+      {t:"لَا حَوْلَ وَلَا قُوَّةَ إِلَّا بِاللَّه", n:100}
+    ]},
+  { id:"istighfar", ico:"♻️", title:"الاستغفار",
+    closeTitle:"تمّ الاستغفار",
+    closeDua:"أَسْتَغْفِرُ اللَّهَ الْعَظِيمَ وَأَتُوبُ إِلَيْهِ",
+    items:[
+      {t:"أَسْتَغْفِرُ اللَّهَ وَأَتُوبُ إِلَيْهِ", n:100},
+      {t:"سَيِّدُ الِاسْتِغْفَار", n:1},
+      {t:"أَسْتَغْفِرُ اللَّهَ الْعَظِيم", n:33}
+    ]},
+  { id:"salawat", ico:"🤍", title:"الصلاة على النبي ﷺ",
+    closeTitle:"صَلَّى اللَّهُ عَلَيْهِ وَسَلَّم",
+    closeDua:"اللَّهُمَّ صَلِّ وَسَلِّمْ عَلَى نَبِيِّنَا مُحَمَّد",
+    items:[
+      {t:"اللَّهُمَّ صَلِّ وَسَلِّمْ عَلَى نَبِيِّنَا مُحَمَّد", n:100},
+      {t:"الصَّلَاةُ الْإِبْرَاهِيمِيَّة", n:1},
+      {t:"صَلَّى اللَّهُ عَلَيْهِ وَسَلَّم", n:33}
+    ]},
+  { id:"free", ico:"∞", title:"تسبيح مفتوح",
+    closeTitle:"جلسة تسبيح",
+    closeDua:"تقبّل الله ذكرك",
+    items:[{t:"سُبْحَانَ اللَّه", n:0}]}
+];
+
+/* ═══════ النصوص الكاملة للأذكار الطويلة (مطابقة لـ Shared.swift) ═══════ */
+const FULL = {
+  "سَيِّدُ الِاسْتِغْفَار": "اللَّهُمَّ أَنْتَ رَبِّي لَا إِلَهَ إِلَّا أَنْتَ، خَلَقْتَنِي وَأَنَا عَبْدُكَ، وَأَنَا عَلَى عَهْدِكَ وَوَعْدِكَ مَا اسْتَطَعْتُ، أَعُوذُ بِكَ مِنْ شَرِّ مَا صَنَعْتُ، أَبُوءُ لَكَ بِنِعْمَتِكَ عَلَيَّ، وَأَبُوءُ بِذَنْبِي فَاغْفِرْ لِي، فَإِنَّهُ لَا يَغْفِرُ الذُّنُوبَ إِلَّا أَنْتَ",
+  "الصَّلَاةُ الْإِبْرَاهِيمِيَّة": "اللَّهُمَّ صَلِّ عَلَى مُحَمَّدٍ وَعَلَى آلِ مُحَمَّدٍ، كَمَا صَلَّيْتَ عَلَى إِبْرَاهِيمَ وَعَلَى آلِ إِبْرَاهِيمَ، إِنَّكَ حَمِيدٌ مَجِيدٌ، وَبَارِكْ عَلَى مُحَمَّدٍ وَعَلَى آلِ مُحَمَّدٍ، كَمَا بَارَكْتَ عَلَى إِبْرَاهِيمَ وَعَلَى آلِ إِبْرَاهِيمَ، إِنَّكَ حَمِيدٌ مَجِيدٌ",
+  "اللَّهُ أَكْبَر": "تسبيح فاطمة رضي الله عنها: سُبْحَانَ اللَّه (٣٣) · الْحَمْدُ لِلَّه (٣٣) · اللَّهُ أَكْبَر (٣٤)",
+  "آيَةُ الْكُرْسِيّ": "اللَّهُ لَا إِلَهَ إِلَّا هُوَ الْحَيُّ الْقَيُّومُ، لَا تَأْخُذُهُ سِنَةٌ وَلَا نَوْمٌ، لَهُ مَا فِي السَّمَاوَاتِ وَمَا فِي الْأَرْضِ، مَنْ ذَا الَّذِي يَشْفَعُ عِنْدَهُ إِلَّا بِإِذْنِهِ، يَعْلَمُ مَا بَيْنَ أَيْدِيهِمْ وَمَا خَلْفَهُمْ، وَلَا يُحِيطُونَ بِشَيْءٍ مِنْ عِلْمِهِ إِلَّا بِمَا شَاءَ، وَسِعَ كُرْسِيُّهُ السَّمَاوَاتِ وَالْأَرْضَ، وَلَا يَئُودُهُ حِفْظُهُمَا، وَهُوَ الْعَلِيُّ الْعَظِيمُ",
+  "سَيِّدُ الِاسْتِغْفَارِ": "اللَّهُمَّ أَنْتَ رَبِّي لَا إِلَهَ إِلَّا أَنْتَ، خَلَقْتَنِي وَأَنَا عَبْدُكَ، وَأَنَا عَلَى عَهْدِكَ وَوَعْدِكَ مَا اسْتَطَعْتُ، أَعُوذُ بِكَ مِنْ شَرِّ مَا صَنَعْتُ، أَبُوءُ لَكَ بِنِعْمَتِكَ عَلَيَّ، وَأَبُوءُ بِذَنْبِي، فَاغْفِرْ لِي، فَإِنَّهُ لَا يَغْفِرُ الذُّنُوبَ إِلَّا أَنْتَ",
+  "الْمُعَوِّذَات": "قُلْ هُوَ اللَّهُ أَحَدٌ ۝ اللَّهُ الصَّمَدُ ۝ لَمْ يَلِدْ وَلَمْ يُولَدْ ۝ وَلَمْ يَكُنْ لَهُ كُفُوًا أَحَدٌ\n\nقُلْ أَعُوذُ بِرَبِّ الْفَلَقِ ۝ مِنْ شَرِّ مَا خَلَقَ ۝ وَمِنْ شَرِّ غَاسِقٍ إِذَا وَقَبَ ۝ وَمِنْ شَرِّ النَّفَّاثَاتِ فِي الْعُقَدِ ۝ وَمِنْ شَرِّ حَاسِدٍ إِذَا حَسَدَ\n\nقُلْ أَعُوذُ بِرَبِّ النَّاسِ ۝ مَلِكِ النَّاسِ ۝ إِلَهِ النَّاسِ ۝ مِنْ شَرِّ الْوَسْوَاسِ الْخَنَّاسِ ۝ الَّذِي يُوَسْوِسُ فِي صُدُورِ النَّاسِ ۝ مِنَ الْجِنَّةِ وَالنَّاسِ",
+  "الْمُعَوِّذَات مَعَ النَّفْث": "تُقرأ الفاتحة والإخلاص والمعوذتان، ويُنفَث في الكفين ثم يُمسح بهما الوجه وما وصل من الجسد.\n\nقُلْ هُوَ اللَّهُ أَحَدٌ ۝ اللَّهُ الصَّمَدُ ۝ لَمْ يَلِدْ وَلَمْ يُولَدْ ۝ وَلَمْ يَكُنْ لَهُ كُفُوًا أَحَدٌ",
+  "اللَّهُمَّ أَنْتَ السَّلَامُ…": "اللَّهُمَّ أَنْتَ السَّلَامُ وَمِنْكَ السَّلَامُ، تَبَارَكْتَ يَا ذَا الْجَلَالِ وَالْإِكْرَامِ",
+  "لَا إِلَهَ إِلَّا اللَّه وَحْدَهُ…": "لَا إِلَهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ\n\n(تمام المائة بعد التسبيح والتحميد والتكبير)",
+  "أَصْبَحْنَا وَأَصْبَحَ الْمُلْكُ لِلَّه": "أَصْبَحْنَا وَأَصْبَحَ الْمُلْكُ لِلَّهِ، وَالْحَمْدُ لِلَّهِ، لَا إِلَهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ، رَبِّ أَسْأَلُكَ خَيْرَ مَا فِي هَذَا الْيَوْمِ وَخَيْرَ مَا بَعْدَهُ، وَأَعُوذُ بِكَ مِنْ شَرِّ مَا فِي هَذَا الْيَوْمِ وَشَرِّ مَا بَعْدَهُ",
+  "أَمْسَيْنَا وَأَمْسَى الْمُلْكُ لِلَّه": "أَمْسَيْنَا وَأَمْسَى الْمُلْكُ لِلَّهِ، وَالْحَمْدُ لِلَّهِ، لَا إِلَهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ، رَبِّ أَسْأَلُكَ خَيْرَ مَا فِي هَذِهِ اللَّيْلَةِ وَخَيْرَ مَا بَعْدَهَا، وَأَعُوذُ بِكَ مِنْ شَرِّ مَا فِي هَذِهِ اللَّيْلَةِ وَشَرِّ مَا بَعْدَهَا",
+  "اللَّهُمَّ بِكَ أَصْبَحْنَا": "اللَّهُمَّ بِكَ أَصْبَحْنَا، وَبِكَ أَمْسَيْنَا، وَبِكَ نَحْيَا، وَبِكَ نَمُوتُ، وَإِلَيْكَ النُّشُورُ",
+  "اللَّهُمَّ بِكَ أَمْسَيْنَا": "اللَّهُمَّ بِكَ أَمْسَيْنَا، وَبِكَ أَصْبَحْنَا، وَبِكَ نَحْيَا، وَبِكَ نَمُوتُ، وَإِلَيْكَ الْمَصِيرُ",
+  "اللَّهُمَّ عَافِنِي فِي بَدَنِي": "اللَّهُمَّ عَافِنِي فِي بَدَنِي، اللَّهُمَّ عَافِنِي فِي سَمْعِي، اللَّهُمَّ عَافِنِي فِي بَصَرِي، لَا إِلَهَ إِلَّا أَنْتَ. اللَّهُمَّ إِنِّي أَعُوذُ بِكَ مِنَ الْكُفْرِ وَالْفَقْرِ، وَأَعُوذُ بِكَ مِنْ عَذَابِ الْقَبْرِ، لَا إِلَهَ إِلَّا أَنْتَ",
+  "بِسْمِ اللَّهِ الَّذِي لَا يَضُرُّ…": "بِسْمِ اللَّهِ الَّذِي لَا يَضُرُّ مَعَ اسْمِهِ شَيْءٌ فِي الْأَرْضِ وَلَا فِي السَّمَاءِ، وَهُوَ السَّمِيعُ الْعَلِيمُ",
+  "رَضِيتُ بِاللَّهِ رَبًّا": "رَضِيتُ بِاللَّهِ رَبًّا، وَبِالْإِسْلَامِ دِينًا، وَبِمُحَمَّدٍ ﷺ نَبِيًّا",
+  "اللَّهُمَّ إِنِّي أَعُوذُ بِكَ…": "اللَّهُمَّ إِنِّي أَعُوذُ بِكَ مِنَ الْهَمِّ وَالْحَزَنِ، وَأَعُوذُ بِكَ مِنَ الْعَجْزِ وَالْكَسَلِ، وَأَعُوذُ بِكَ مِنَ الْجُبْنِ وَالْبُخْلِ، وَأَعُوذُ بِكَ مِنْ غَلَبَةِ الدَّيْنِ وَقَهْرِ الرِّجَالِ"
+};
+
+/* ═══════ خلفيات المجموعات (مدمجة، بلا موارد خارجية) ═══════ */
+const BG_IDS = ['after_prayer','morning','evening','sleep','general','free','general','evening'];
+/* المجموعتان الجديدتان تستخدمان خلفيتين من نفس العائلة (التصميم لغة واحدة متّسقة) */
+
+/* ═══════ الحالة ═══════ */
+const CIRC = 2*Math.PI*68, CIRC_MINI = 2*Math.PI*15;
+const S = { si:0, ii:0, c:0, total:0, done:false, aod:false, auto:true, hap:true, busy:false,
+            start:Date.now(), summary:null, read:false, fs:1, badgeRight:true,
+            cMode:0, mSens:1, motionOn:false, motionLevel:0,
+            prompt:false, wpmIdx:1, paused:false, dist:false, y:0, lastTs:0,
+            menu:false, page:'main', night:false, bg:true, bgOp:0.55,
+            wMode:'current', wPlus:true, wSetName:true,
+            sound:false, hLevel:1, hist:{}, histTotal:0 };
+
+const $ = id => document.getElementById(id);
+
+/* 🔗 ربط آمن: لا يُسقط الصفحة إذا كان العنصر غير موجود */
+function bind(id, handler){
+  const e = document.getElementById(id);
+  if (e){ e.onclick = handler; return e; }
+  console.warn('[سبحة] عنصر غير موجود:', id);
+  return null;
+}
+
+/* 🛡️ كاشف أخطاء مرئي: لا مزيد من الصفحة الميتة بلا سبب مفهوم */
+window.addEventListener('error', ev=>{
+  const box = document.getElementById('errBanner');
+  if (!box) return;
+  box.style.display = 'block';
+  box.textContent = '⚠️ خطأ: ' + (ev.message || 'غير معروف') +
+                    (ev.lineno ? ' (سطر ' + ev.lineno + ')' : '');
+});
+
+const el = {
+  setName:$('setName'), dhikr:$('dhikr'), meta:$('meta'), num:$('num'), of:$('of'), prog:$('prog'),
+  ring:$('ring'), trackRow:$('trackRow'), nextLine:$('nextLine'), status:$('statusTxt'),
+  aod:$('aod'), aodNum:$('aodNum'), toast:$('toast'), flash:$('flash'), flashTx:$('flashTx'),
+  pinch:$('pinch'), log:$('log'), doneView:$('doneView'),
+  stTotal:$('stTotal'), stCount:$('stCount'), stPos:$('stPos'),
+  stackSet:$('stackSet'), stackTitle:$('stackTitle'), stackCount:$('stackCount'), stackProg:$('stackProg'),
+  hClick:$('hClick'), hNotif:$('hNotif'), hWin:$('hWin'), screen:$('screen'),
+  rdTitle:$('rdTitle'), rdText:$('rdText'), rdScroll:$('rdScroll'), badge:$('badge'),
+  bProg:$('bProg'), bNum:$('bNum'), bTarget:$('bTarget'),
+  ringLayout:$('ringLayout'), readLayout:$('readLayout'), posTag:$('posTag'),
+  menu:$('menu'), mscrim:$('mscrim'), menuBtn:$('menuBtn'), screen2:$('screen'),
+  promptBar:$('promptBar'), pbPlay:$('pbPlay'), pbProg:$('pbProg'), pbLabel:$('pbLabel')
+};
+const set  = () => SETS[S.si];
+const item = () => set().items[S.ii];
+const unlimited = () => item().n <= 0;
+const isLast = () => S.ii >= set().items.length - 1;
+
+/* ═══════ السجل ═══════ */
+function logEvent(txt, kind=''){
+  const d = document.createElement('div');
+  if (kind) d.className = kind;
+  const n = new Date(), p = x => String(x).padStart(2,'0');
+  d.innerHTML = txt + '<time>' + p(n.getHours())+':'+p(n.getMinutes())+':'+p(n.getSeconds()) + '</time>';
+  el.log.prepend(d);
+  while (el.log.children.length > 40) el.log.lastChild.remove();
+}
+
+/* ═══════ الاهتزاز ═══════ */
+function haptic(kind){
+  if (!S.hap) return;
+  const dot = kind==='notif' ? el.hNotif : kind==='win' ? el.hWin : el.hClick;
+  dot.classList.add('on'); setTimeout(()=>dot.classList.remove('on'), 420);
+  if (navigator.vibrate){
+    navigator.vibrate(kind==='win' ? [50,70,90,70,50] : kind==='notif' ? [40,60,40] : 18);
+  }
+}
+
+/* ═══════ تطبيق خلفية المجموعة الحالية ═══════ */
+function applyBackground(){
+  const sc = el.screen2;
+  BG_IDS.forEach(id => sc.classList.remove('bg-' + id));
+  sc.classList.add('bg-' + (BG_IDS[S.si] || 'after_prayer'));
+  sc.classList.toggle('bg-on', S.bg);
+  sc.style.setProperty('--bgop', S.bgOp);
+}
+
+/* ═══════ الرسم ═══════ */
+function render(){
+  applyBackground();
+  const st = set(), it = item();
+  el.setName.textContent = st.ico + ' ' + st.title;
+  el.dhikr.textContent = it.t;          // 🔒 تحديث دائم لاسم الذكر (كان يبقى قديمًا في مسارات الاستعادة)
+  el.meta.textContent = 'الذكر ' + (S.ii+1) + ' / ' + st.items.length + ' · اليوم: ' + S.total;
+  el.num.textContent = S.c;
+  el.aodNum.textContent = S.c;
+  const aodMode = document.getElementById('aodMode');
+  if (aodMode){
+    aodMode.textContent = S.cMode === 1 ? '✋ العدّ بالحركة يعمل الآن'
+                        : S.cMode === 2 ? '🎡 العدّ بالتاج يعمل الآن'
+                        : 'ارفع رسغك ثم انقر مرتين';
+    aodMode.style.color = S.cMode > 0 ? 'var(--teal)' : 'var(--dim)';
+  }
+  el.of.textContent = unlimited() ? 'بلا حد' : '/ ' + it.n;
+  el.stTotal.textContent = S.total;
+  el.stCount.textContent = S.c;
+  el.stPos.textContent = (S.ii+1) + '/' + st.items.length;
+
+  const p = unlimited() ? 0 : Math.min(1, S.c / it.n);
+  el.prog.style.strokeDashoffset = CIRC * (1 - p);
+
+  // شريط تقدّم المجموعة
+  el.trackRow.innerHTML = '';
+  st.items.forEach((x,k)=>{
+    const s = document.createElement('span');
+    s.className = 'seg' + (k < S.ii ? ' done' : k === S.ii ? ' cur' : '');
+    el.trackRow.appendChild(s);
+  });
+
+  // ── وضع القراءة ──
+  const fullText = FULL[it.t] || it.t;
+  el.rdTitle.textContent = it.t;
+  el.rdText.innerHTML = fullText.replace(/\n/g, '<br>');
+  el.bNum.textContent = S.c;
+  el.bTarget.textContent = unlimited() ? '∞' : it.n;
+  el.bProg.style.strokeDashoffset = 157.08 * (1 - p);
+  el.posTag.textContent = (S.ii+1) + '/' + st.items.length;
+
+  // الذكر التالي
+  el.nextLine.textContent = isLast()
+    ? 'آخر ذكر في المجموعة'
+    : 'التالي: ' + st.items[S.ii+1].t;
+
+  // الودجت — يحترم إعدادات الودجت من القائمة
+  const wSet = $('stackSet'), wTitle = $('stackTitle'), wCount = $('stackCount'), wPlus = $('stackPlus');
+  wSet.style.display = S.wSetName ? '' : 'none';
+  const setProgress = st.items.length ? (S.ii / st.items.length) : 0;
+  if (S.wMode === 'summary'){
+    wTitle.textContent = 'الموضع ' + (S.ii+1) + '/' + st.items.length;
+    wCount.textContent = 'اليوم: ' + S.total;
+    el.stackProg.style.strokeDashoffset = CIRC_MINI * (1 - setProgress);
+    wPlus.style.display = 'none';                 // لا معنى لزر التسجيل في نمط الملخّص
+  } else {
+    wTitle.textContent = S.done ? 'تمّت المجموعة ✅' : it.t;
+    wCount.textContent = unlimited() ? (S.c + ' · بلا حد') : (S.c + ' / ' + it.n + ' · ' + (S.ii+1) + '/' + st.items.length);
+    el.stackProg.style.strokeDashoffset = CIRC_MINI * (1 - p);
+    wPlus.style.display = S.wPlus ? '' : 'none';
+  }
+  wSet.textContent = st.title;
+}
+
+/* انتقال سلس لاسم الذكر */
+function swapDhikrText(newText){
+  const n = el.dhikr;
+  n.style.transition = 'opacity .18s ease, transform .18s ease';
+  n.style.opacity = 0; n.style.transform = 'translateY(-10px)';
+  setTimeout(()=>{
+    n.textContent = newText;
+    n.style.transform = 'translateY(10px)';
+    requestAnimationFrame(()=>{ n.style.opacity = 1; n.style.transform = 'translateY(0)'; });
+  }, 180);
+}
+
+/* ═══════ الذكر ═══════ */
+function tap(source){
+  if (S.done){ toast('المجموعة مكتملة — أعد البدء من رسالة الإغلاق'); return; }
+  if (S.busy) return;
+
+  S.c++; S.total++;
+  el.ring.classList.add('pulse'); setTimeout(()=>el.ring.classList.remove('pulse'), 120);
+  el.badge.classList.add('big'); setTimeout(()=>el.badge.classList.remove('big'), 250);
+  haptic('click');
+  playSound('click');                     // 🔊 نقرة ناعمة (إن كان الصوت مفعّلًا)
+  histBump(1);                            // 📊 سجلّ الإحصاءات
+  logEvent(source==='gesture' ? '☝️ ضغط مزدوج → +1' : source==='widget' ? '📚 من الودجت → +1' : '👆 لمس → +1');
+
+  if (!unlimited() && S.c >= item().n){ advanceOrFinish(source); return; }
+  render();
+}
+
+function advanceOrFinish(source){
+  const prev = item();
+  if (isLast()){
+    // 🎉 إتمام المجموعة
+    S.done = true; S.busy = false;
+    haptic('win');
+    playSound('chime');                   // 🔔 نغمة إتمام المجموعة
+    buildSummary();
+    logEvent('🎉 تمّت «' + set().title + '» — رسالة إغلاق + اهتزاز مزدوج', 'gold');
+    render(); showDone();
+    return;
+  }
+  // انتقال سلس
+  S.busy = true;
+  haptic('notif');
+  playSound('chime');                     // 🔔 نغمة إتمام الذكر
+  el.flashTx.textContent = 'أكملت ' + prev.t + ' (' + prev.n + ')';
+  el.flash.classList.remove('on'); void el.flash.offsetWidth; el.flash.classList.add('on');
+  logEvent('✅ أكملت «' + prev.t + '» (' + prev.n + ') — انتقال للذكر التالي', 'strong');
+
+  const nextIndex = S.ii + 1;
+  setTimeout(()=>{
+    S.ii = nextIndex; S.c = 0; S.busy = false;
+    swapDhikrText(item().t);
+    haptic('notif');                       // إشارة «تغيّر الذكر» مختلفة عن العدّ
+    logEvent('↪️ الذكر ' + (S.ii+1) + '/' + set().items.length + ': ' + item().t, 'ok');
+    el.flash.classList.remove('on');
+    render();
+    if (S.read){
+      S.y = 0; el.rdScroll.scrollTop = 0;    // النص التالي يبدأ من أعلاه
+      if (S.prompt){ S.paused = false; S.lastTs = 0; if (rafId) cancelAnimationFrame(rafId); rafId = requestAnimationFrame(promptFrame); }
+    }
+  }, 650);
+}
+
+function skip(){
+  if (S.done) return;
+  if (isLast()){ S.c = item().n||S.c; advanceOrFinish('skip'); return; }
+  S.ii++; S.c = 0; swapDhikrText(item().t); haptic('notif');
+  logEvent('⏭ تخطّي إلى: ' + item().t); render();
+}
+
+function decrement(){
+  if (S.done || S.c <= 0) return;
+  S.c--; if (S.total>0) S.total--; haptic('click'); logEvent('− تراجع'); render();
+}
+
+function resetCurrent(){
+  // كان يعود بصمت في هاتين الحالتين → بدا الزر «لا يعمل»
+  if (S.done){
+    S.done = false; S.summary = null; hideDone();
+    haptic('click'); toast('أُلغي الإكمال — يمكنك العدّ مجددًا');
+    logEvent('↺ إلغاء حالة الإكمال — عاد العدّ شغّالًا', 'ok'); render(); return;
+  }
+  if (S.c === 0){
+    haptic('click'); toast('العدد صفر بالفعل');
+    logEvent('ℹ️ تصفير: العدد صفر أصلًا (لا شيء لتصفيره)'); return;
+  }
+  S.c = 0; haptic('click'); toast('صُفِّر الذكر الحالي');
+  logEvent('🔄 تصفير الذكر الحالي'); render();
+}
+
+/* ═══════ رسالة الإغلاق ═══════ */
+function buildSummary(){
+  const st = set();
+  S.summary = {
+    set: st.title,
+    items: st.items.length,
+    taps: st.items.reduce((a,b)=>a+(b.n||0),0) || S.c,
+    seconds: Math.max(1, Math.round((Date.now()-S.start)/1000))
+  };
+}
+
+function showDone(){
+  const s = S.summary, st = set();
+  $('doneTitle').textContent = st.closeTitle;
+  $('doneDua').textContent = st.closeDua;
+
+  // للتسبيح المفتوح نعرض العدد الفعلي والضغطات المسجَّلة
+  const isFreeSet = st.items.every(x=>x.n<=0);
+  $('dSet').textContent   = s.set;
+  $('dItems').textContent = isFreeSet ? '—' : s.items;
+  $('dTaps').textContent  = isFreeSet ? S.c : s.taps;
+  const m = Math.floor(s.seconds/60), sec = s.seconds%60;
+  $('dTime').textContent  = m>0 ? (m+' د '+sec+' ث') : (sec+' ثانية');
+
+  el.doneView.classList.add('on');
+}
+/* ═══════ العدّ بلا نظر: نقرة · حركة · تاج ═══════ */
+const CMODE = ['نقرة','حركة','تاج'];
+function setCountingMode(v){
+  S.cMode = v; S.motionOn = false;
+  logEvent('✋ وضع العدّ: ' + CMODE[v] + (v>0 ? ' — تعمل والشاشة خافتة ✓' : ' — تحتاج شاشة مضيئة'));
+  toast(v===0 ? 'النقرة المزدوجة: ارفع رسغك أولًا' :
+        v===1 ? 'العدّ بالحركة — جرّب «محاكاة حركة» بالأسفل' :
+                'العدّ بالتاج — كل نقرة تاج = ذكر');
+  applyLayout();
+}
+/* محاكاة نكزة رسغ (في الساعة الحقيقية يقرؤها CoreMotion) */
+function simulateMotion(){
+  if (S.cMode !== 1){ toast('اختر «حركة» من القائمة أولًا'); return; }
+  S.motionOn = true; S.motionLevel = 1;
+  if (S.aod){ tap('motion'); haptic('click'); }
+  else { tap('motion'); }
+  logEvent('✨ نكزة حركة مكتشفة — سُجّل ذكر (حساسية ' + ['منخفضة','متوسطة','عالية'][S.mSens] + ')', 'ok');
+  render();
+  setTimeout(()=>{ S.motionLevel = 0; render(); }, 300);
+}
+/* نقرة تاج (في الساعة الحقيقية digitalCrownRotation) */
+function crownTick(){
+  if (S.cMode !== 2){ toast('اختر «تاج» من القائمة أولًا'); return; }
+  tap('crown'); logEvent('🎡 نقرة تاج — ذكر');
+}
+
+function hideDone(){ el.doneView.classList.remove('on'); }
+
+function restartSet(){
+  S.ii = 0; S.c = 0; S.done = false; S.summary = null; S.start = Date.now();
+  hideDone(); el.dhikr.textContent = item().t; haptic('click');
+  logEvent('↺ إعادة المجموعة من الأول'); render();
+}
+function finishFreeSession(){
+  if (S.c <= 0){ toast('لا يوجد عدد لتسجيله'); return; }
+  S.done = true; haptic('win'); buildSummary(); render(); showDone();
+  logEvent('🏁 إنهاء جلسة التسبيح المفتوح — العدد: ' + S.c, 'gold');
+}
+function selectSet(i, switchView = true){
+  S.si = i; S.ii = 0; S.c = 0; S.done = false; S.summary = null; S.start = Date.now();
+  hideDone(); haptic('notif');
+  el.dhikr.textContent = SETS[i].items[0].t;
+  logEvent('📚 اخترت مجموعة: ' + SETS[i].title + ' (' + SETS[i].items.length + ' أذكار)', 'ok');
+  renderSets(); render();
+  if (switchView){
+    const tab = document.querySelector('.tab[data-v="counter"]');
+    if (tab && typeof tab.click === 'function') tab.click();
+  }
+}
+
+function renderSets(){
+  const box = $('setsList'); box.innerHTML = '';
+  SETS.forEach((s,i)=>{
+    const total = s.items.reduce((a,b)=>a+(b.n||0),0);
+    const row = document.createElement('div');
+    row.className = 'setrow' + (i===S.si ? ' cur' : '');
+    row.innerHTML = '<span class="ico">'+s.ico+'</span><div><div class="tt">'+s.title+'</div>'+
+      '<div class="dt">'+s.items.length+' أذكار'+(total>0?(' · '+total+' ضغطة'):' · بلا حد')+'</div></div>'+
+      (i===S.si ? '<span class="chk">✔</span>' : '');
+    row.onclick = ()=> selectSet(i);
+    box.appendChild(row);
+  });
+}
+
+/* ═══════════════════════════════════════════════════════════
+   📜 التلقين: تمرير تلقائي بوتيرة قراءة (كلمة/دقيقة)
+   المسافة الكاملة ÷ (عدد الكلمات ÷ الوتيرة) = بكسل/ثانية
+   ═══════════════════════════════════════════════════════════ */
+const WPM = [40, 60, 90], WPM_LABEL = ['هادئ ٤٠','متوسط ٦٠','سريع ٩٠'];
+let rafId = null;
+
+function wordCount(){
+  const txt = (FULL[item().t] || item().t).replace(/\n/g,' ');
+  return Math.max(1, txt.trim().split(/\s+/).length);
+}
+function promptSpeed(){
+  const cont = el.rdScroll;
+  const maxY = Math.max(0, cont.scrollHeight - cont.clientHeight);
+  if (maxY <= 1) return 0;
+  const seconds = Math.max(8, wordCount() * 60 / WPM[S.wpmIdx]);
+  return maxY / seconds;                       // بكسل/ثانية
+}
+function promptTotal(){ return Math.max(0, el.rdScroll.scrollHeight - el.rdScroll.clientHeight); }
+
+function startPrompt(){
+  S.prompt = true; S.paused = false; S.y = 0; S.lastTs = 0;
+  el.rdScroll.scrollTop = 0;
+  el.promptBar.classList.add('on');
+  updatePromptUI();
+  logEvent('📜 تشغيل التلقين — ' + WPM_LABEL[S.wpmIdx] + ' كلمة/دقيقة · النص: ' + wordCount() + ' كلمة', 'ok');
+  rafId = requestAnimationFrame(promptFrame);
+}
+function stopPrompt(why){
+  S.prompt = false; S.paused = true;
+  if (rafId) cancelAnimationFrame(rafId), rafId = null;
+  el.promptBar.classList.remove('on');
+  updatePromptUI();
+  if (why) logEvent('⏸ ' + why);
+}
+function togglePause(){
+  if (!S.prompt){ noScrollWarned = false; startPrompt(); return; }
+  if (S.paused){
+    S.paused = false; S.lastTs = 0;
+    rafId = requestAnimationFrame(promptFrame);
+    updatePromptUI(); logEvent('▶ استئناف التلقين');
+  } else {
+    S.paused = true;
+    if (rafId) cancelAnimationFrame(rafId), rafId = null;
+    updatePromptUI(); logEvent('⏸ إيقاف مؤقت للتلقين');
+  }
+}
+function promptFrame(ts){
+  if (!S.prompt || S.paused) return;
+  const cont = el.rdScroll;
+  const maxY = promptTotal();
+  const dt = S.lastTs ? Math.min(0.1, (ts - S.lastTs)/1000) : 0.05;
+  S.lastTs = ts;
+
+  if (maxY <= 1){                       // النص أقصر من الشاشة
+    promptNothingToScroll(); return;
+  }
+  S.y = Math.min(S.y + promptSpeed()*dt, maxY);
+  cont.scrollTop = S.y;
+  updatePromptUI();
+
+  if (S.y >= maxY - 0.5){               // انتهى النص
+    haptic('notif');
+    logEvent('🏁 انتهى النص — توقف التلقين بإشارة اهتزاز', 'gold');
+    finishPrompt(); return;
+  }
+  rafId = requestAnimationFrame(promptFrame);
+}
+function finishPrompt(){
+  S.prompt = false;                     // ← حتى يعمل زر الإعادة من الأعلى
+  S.paused = true;
+  if (rafId) cancelAnimationFrame(rafId), rafId = null;
+  el.promptBar.classList.add('on');      // يبقى الشريط لإتاحة الإعادة
+  updatePromptUI(true);
+}
+function updatePromptUI(finished){
+  const total = promptTotal();
+  el.pbProg.style.width = total > 0 ? Math.round(100*S.y/total) + '%' : '100%';
+  el.pbPlay.textContent = (!S.prompt || S.paused) ? '↺' : '⏸';
+  el.pbLabel.textContent = finished ? 'انتهى — إعادة' : WPM_LABEL[S.wpmIdx];
+}
+let noScrollWarned = false;
+function promptNothingToScroll(){
+  S.prompt = false; S.paused = true;
+  if (rafId) cancelAnimationFrame(rafId), rafId = null;
+  el.promptBar.classList.add('on');
+  el.pbLabel.textContent = 'النص كامل على الشاشة';
+  el.pbProg.style.width = '100%';
+  el.pbPlay.textContent = '↺';
+  haptic('notif');
+  if (!noScrollWarned){
+    noScrollWarned = true;
+    toast('النص كامل ظاهر — لا حاجة للتمرير · جرّبه على آية الكرسي');
+    logEvent('ℹ️ التلقين: نص قصير لا يُمرَّر. جرّبه على «آيَةُ الْكُرْسِيّ» — زر 🧪 في اللوحة', 'bad');
+  } else {
+    logEvent('ℹ️ التلقين: لا يوجد ما يُمرَّر في هذا الذكر');
+  }
+}
+function restartPrompt(){
+  el.rdScroll.scrollTop = 0; S.y = 0; S.lastTs = 0; S.paused = false;
+  if (!S.prompt){ startPrompt(); return; }
+  if (rafId) cancelAnimationFrame(rafId);
+  rafId = requestAnimationFrame(promptFrame);
+  logEvent('↺ إعادة التلقين من أعلى'); updatePromptUI();
+}
+function cycleWpm(){
+  S.wpmIdx = (S.wpmIdx + 1) % 3;
+  updatePromptUI();
+  logEvent('⏩ وتيرة التلقين: ' + WPM_LABEL[S.wpmIdx] + ' كلمة/دقيقة');
+}
+function toggleDist(){
+  S.dist = !S.dist;
+  el.readLayout.classList.toggle('dist', S.dist);
+  $('btnDist').classList.toggle('on', S.dist);
+  $('pbDist').classList.toggle('on', S.dist);
+  toast(S.dist ? 'الرؤية من بعيد: خط أكبر وأسمك' : 'حجم العرض العادي');
+  logEvent(S.dist ? '👁️ الرؤية من بعيد: خط أكبر وأسمك + تعزيز سماكة التشكيل'
+                  : '◯ حجم العرض العادي', 'ok');
+  render();                       // لإعادة حساب مسافة التمرير بعد تكبير الخط
+}
+
+/* ═══════════════════════════════════════════════════════════
+   ☰ القائمة المنسدلة — كل الخيارات والإعدادات وإعدادات الودجت
+   زر واحد في الزاوية العلوية اليسرى · صفوف مبنيّة من مصفوفة واحدة
+   ═══════════════════════════════════════════════════════════ */
+const FSL = ['صغير','متوسط','كبير','ضخم'];
+
+function segRow(icon,label,opts,sel,key){
+  return `<div class="mrow" style="cursor:default"><span class="i">${icon}</span><span class="t">${label}</span></div>
+    <div class="mseg" data-seg="${key}">` +
+    opts.map((o,i)=>`<span data-act="seg:${key}:${i}" class="${i===sel?'on':''}">${o}</span>`).join('') +
+    `</div>`;
+}
+function swRow(icon,label,on,act,extra=''){
+  return `<div class="mrow" data-act="${act}"><span class="i">${icon}</span>
+    <span class="t">${label}${extra}</span><span class="msw ${on?'on':''}"></span></div>`;
+}
+function navRow(icon,label,val,page){
+  return `<div class="mrow" data-act="page:${page}"><span class="i">${icon}</span>
+    <span class="t">${label}</span><span class="v">${val}</span><span class="c">›</span></div>`;
+}
+function actRow(icon,label,act){
+  return `<div class="mrow act" data-act="${act}"><span class="i">${icon}</span><span class="t">${label}</span></div>`;
+}
+function headRow(t){ return `<div class="msec">${t}</div>`; }
+function howtoCard(icon, title, desc){
+  return `<div class="hcard"><span class="hi">${icon}</span>
+    <span class="hb"><span class="ht">${title}</span><span class="hd">${desc}</span></span></div>`;
+}
+
+/* ── 🔊 الأصوات الناعمة (نقرة + نغمة إتمام) ──
+   تُولَّد لحظيًا بلا ملفات صوت. وفي بيئة بلا صوت (الاختبارات) يفشل الصمت بهدوء. */
+let AC = null;
+function playSound(kind){
+  if (!S.sound) return;
+  try{
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!Ctx) return;
+    AC = AC || new Ctx();
+    const t = AC.currentTime;
+    const g = AC.createGain();
+    g.connect(AC.destination);
+    if (kind === 'click'){
+      const o = AC.createOscillator();
+      o.type = 'triangle'; o.frequency.value = 1750;
+      g.gain.setValueAtTime(0.14, t);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.05);
+      o.connect(g); o.start(t); o.stop(t + 0.06);
+    } else {
+      const o1 = AC.createOscillator(), o2 = AC.createOscillator();
+      o1.type = o2.type = 'sine';
+      o1.frequency.value = 880; o2.frequency.value = 1320;
+      g.gain.setValueAtTime(0.12, t);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.8);
+      o1.connect(g); o2.connect(g);
+      o1.start(t); o1.stop(t + 0.85); o2.start(t); o2.stop(t + 0.85);
+    }
+  }catch(e){ /* لا صوت في هذه البيئة — لا نُسقط الصفحة أبدًا */ }
+}
+
+/* ── 📊 سجلّ الإحصاءات (يوم بيوم) — نظير HistoryStore في Swift ── */
+function dayKey(d){
+  const p = n => String(n).padStart(2,'0');
+  return d.getFullYear() + '-' + p(d.getMonth()+1) + '-' + p(d.getDate());
+}
+function histBump(n){
+  const k = dayKey(new Date());
+  S.hist[k] = (S.hist[k] || 0) + n;
+  S.histTotal = Object.keys(S.hist).reduce((a,k2)=>a+S.hist[k2], 0);
+}
+function streakDays(){
+  const day = 864e5;
+  let d = new Date(), days = 0;
+  if (!S.hist[dayKey(d)]) d = new Date(d.getTime() - day);   // لا تنكسر السلسلة قبل أن تسبّح اليوم
+  while (S.hist[dayKey(d)] > 0 && days < 400){ days++; d = new Date(d.getTime() - day); }
+  return days;
+}
+function week7(){
+  const names = ['أحد','إثنين','ثلاثاء','أربعاء','خميس','جمعة','سبت'], day = 864e5;
+  const vals = [], labels = [];
+  for (let back = 6; back >= 0; back--){
+    const d = new Date(Date.now() - back*day);
+    vals.push(S.hist[dayKey(d)] || 0);
+    labels.push(back === 0 ? 'اليوم' : names[d.getDay()]);
+  }
+  const peak = Math.max(1, ...vals);
+  const bars = vals.map((v,i)=>`<div class="hbar${i===6?'':' dim'}" style="height:${Math.max(4, 54*v/peak)}px" title="${v}"></div>`).join('');
+  return { today: vals[6], bars, labels: labels.map(l=>`<span>${l}</span>`).join('') };
+}
+
+function renderMenu(){
+  const head = `<div class="mh">
+      ${S.page!=='main' ? '<span class="b" data-act="page:main">‹</span>' : ''}
+      <span class="t">${ S.page==='main'?'القائمة':(S.page==='sets'?'المجموعات':(S.page==='stats'?'إحصاءاتك':(S.page==='howto'?'كيف أستخدم السبحة؟':'إعدادات الودجت'))) }</span>
+      <span class="x" data-act="close">✕</span></div>`;
+
+  let body = '';
+  if (S.page === 'main'){
+    body += headRow('العرض')
+      + swRow('👁️','الرؤية من بعيد', S.dist, 'toggle:dist')
+      + swRow('📖','وضع القراءة', S.read, 'toggle:read')
+      + segRow('🔠','حجم الخط', ['ص','م','ك','ض'], S.fs, 'fs')
+      + swRow('⇋','العدّاد في يمين الشاشة', S.badgeRight, 'toggle:badgeRight')
+      + `<div class="msec">العدّ بلا نظر</div>`
+      + segRow('✋','طريقة العدّ', ['نقرة','حركة','تاج'], S.cMode, 'cMode')
+      + (S.cMode===1 ? segRow('〰️','حساسية الحركة', ['منخفضة','متوسطة','عالية'], S.mSens, 'mSens') : '')
+      + (S.cMode===0 ? `<div class="mnote">النقرة المزدوجة تحتاج شاشة مضيئة — اختر «حركة» أو «تاج» للعدّ والشاشة خافتة</div>` : '')
+      + (S.cMode===1 ? `<div class="mnote">حرّك رسغك حركة صغيرة مقصودة لكل ذكر — تعمل والشاشة خافتة</div>` : '')
+      + (S.cMode===2 ? `<div class="mnote">دوّر التاج الرقمي للأعلى — كل نقرة ذكر</div>` : '')
+      + swRow('🖼️','خلفية المجموعة', S.bg, 'toggle:bg')
+      + segRow('🌗','شدّة الخلفية', ['خافتة','متوسطة','واضحة'], S.bgOp===0.35?0:(S.bgOp===0.55?1:2), 'bgOp')
+      + '<div class="msep"></div>' + headRow('التلقين')
+      + swRow('📜','تمرير تلقائي', S.prompt && !S.paused, 'toggle:prompt', S.prompt?'':' <span class="v">(موقوف)</span>')
+      + segRow('⏩','الوتيرة', ['هادئ','متوسط','سريع'], S.wpmIdx, 'wpm')
+      + '<div class="msep"></div>' + headRow('المجموعات')
+      + navRow('📚', set().title, set().items.length+' أذكار ›', 'sets')
+      + '<div class="msep"></div>' + headRow('الودجت')
+      + navRow('🧩','إعدادات الودجت', (S.wMode==='current'?'الذكر الحالي':'ملخّص') + (S.wPlus?'':' · بلا زر'), 'widget')
+      + '<div class="msep"></div>' + headRow('النظام')
+      + swRow('🌙','الوضع الليلي', S.night, 'toggle:night')
+      + swRow('📳','الاهتزاز', S.hap, 'toggle:hap')
+      + swRow('⏭','الانتقال التلقائي', S.auto, 'toggle:auto')
+      + '<div class="msep"></div>' + headRow('الصوت والاهتزاز')
+      + swRow('🔊','صوت نقرة ونغمة', S.sound, 'toggle:sound')
+      + segRow('〰️','شدة الاهتزاز', ['ناعم','متوسط','قوي'], S.hLevel, 'hLevel')
+      + '<div class="msep"></div>' + headRow('أدوات')
+      + navRow('📊','إحصاءاتك', S.histTotal ? 'الإجمالي '+S.histTotal : 'ابدأ التسبيح', 'stats')
+      + navRow('❓','كيف أستخدم السبحة؟', '٣ خطوات', 'howto')
+      + '<div class="msep"></div>'
+      + actRow('↺','تصفير الذكر الحالي','reset')
+      + actRow('🏁','إنهاء الجلسة (ملخّص)','finish')
+      + `<div class="mnote">الجلسة: ${S.aod?'الشاشة خافتة — العدّ محفوظ':'مستمرة'} · اليوم: ${S.total}</div>`;
+  }
+
+  if (S.page === 'stats'){
+    const wk = week7();
+    body += `<div class="hbig">${wk.today}</div>`
+      + `<div class="hsum" style="justify-content:center">ذكرًا اليوم · سلسلة ${streakDays()} يوم · الإجمالي ${S.histTotal}</div>`
+      + '<div class="msep"></div>'
+      + `<div class="hstat">${wk.bars}</div>`
+      + `<div class="hsum">${wk.labels}</div>`
+      + `<div class="mnote">تُحسب كل ذكر تسجّله — من الساعة أو من الودجت — في يومه تلقائيًا.</div>`;
+  }
+
+  if (S.page === 'howto'){
+    body += howtoCard('☝️','سبّح بنقرة','اضربْ إصبعك السبابة بالإبهام مرّتين لتسجيل ذكر — تعمل مع الشاشة المضيئة')
+      + howtoCard('✋','أو بحركة اليد','حرّك يدك حركة صغيرة فيُسجَّل الذكر — تعمل حتى والشاشة خافتة (أو دوّر التاج)')
+      + howtoCard('📖','اقرأ وتابع','وضع القراءة يملأ الشاشة بالذكر كاملًا مع تلقين تلقائي، وإحصاءاتك في «أدوات»')
+      + `<div class="mnote" style="text-align:center">كل شيء جاهز — ابدأ الآن 🤲</div>`
+      + actRow('✅','ابدأ التسبيح','close');
+  }
+
+  if (S.page === 'sets'){
+    SETS.forEach((st,i)=>{
+      const tot = st.items.reduce((a,b)=>a+(b.n||0),0);
+      body += `<div class="mrow" data-act="set:${i}"><span class="i">${st.ico}</span>
+        <span class="t">${st.title}<br><span class="v">${st.items.length} أذكار${tot>0?' · '+tot+' ضغطة':' · بلا حد'}</span></span>
+        ${i===S.si?'<span class="c" style="color:var(--teal)">✔</span>':''}</div>`;
+    });
+  }
+
+  if (S.page === 'widget'){
+    body += headRow('نمط الودجت')
+      + segRow('🧩','', ['الذكر الحالي','ملخّص المجموعة'], S.wMode==='current'?0:1, 'wMode')
+      + swRow('➕','زر التسجيل داخل الودجت', S.wPlus, 'toggle:wPlus')
+      + swRow('🏷️','إظهار اسم المجموعة', S.wSetName, 'toggle:wSetName')
+      + actRow('📚','الودجت يتابع: '+set().title, 'page:sets')
+      + `<div class="mnote">لا يمكن للتطبيق إضافة الودجت نيابةً عنك؛ النظام يديره:
+         اضغط مطوّلًا على وجه الساعة ← تحرير ← Smart Stack ← أضِف «سبحة».
+         وهذه الإعدادات تتحكم في شكله وسلوكه بعد إضافته.</div>`;
+  }
+
+  el.menu.innerHTML = head + body;
+}
+
+/* ── معالج واحد لكل نقرات القائمة (قابل للاختبار مباشرة) ── */
+function menuAct(action){
+  const [k, a, b] = action.split(':');
+
+  if (k === 'close'){ closeMenu(); return; }
+  if (k === 'page'){ S.page = a; renderMenu(); return; }
+  if (k === 'set'){ selectSet(+a, false); closeMenu(); return; }
+  if (k === 'reset'){ resetCurrent(); renderMenu(); return; }
+  if (k === 'finish'){ finishFreeSession(); closeMenu(); return; }
+
+  if (k === 'seg'){
+    if (a === 'cMode' || a === 'mSens'){
+      const v = +b;
+      if (a === 'cMode'){ S.cMode = v; setCountingMode(v); }
+      else { S.mSens = v; S.motionOn = false; logEvent('〰️ حساسية الحركة: ' + ['منخفضة','متوسطة','عالية'][v]); }
+      renderMenu(); render(); applyLayout(); return;
+    }
+    if (a === 'fs'){ S.fs = +b; render(); applyLayout(); renderMenu(); return; }
+    if (a === 'wpm'){ S.wpmIdx = +b; updatePromptUI(); renderMenu(); return; }
+    if (a === 'hLevel'){ S.hLevel = +b;
+                         logEvent('〰️ شدة الاهتزاز: ' + ['ناعم','متوسط','قوي'][S.hLevel]); renderMenu(); return; }
+    if (a === 'wMode'){ S.wMode = +b === 1 ? 'summary' : 'current'; render(); renderMenu(); return; }
+    if (a === 'bgOp'){ S.bgOp = [0.35,0.55,0.78][+b]; applyBackground(); renderMenu(); return; }
+    return;
+  }
+
+  if (k === 'toggle'){
+    switch(a){
+      case 'dist':      toggleDist(); break;
+      case 'read':      toggleLayout(); break;
+      case 'badgeRight': S.badgeRight = !S.badgeRight; applyLayout(); logEvent('⇋ العدّاد: '+(S.badgeRight?'يمين':'يسار')); break;
+      case 'prompt':    if (!S.read) toggleLayout(); noScrollWarned=false; togglePause(); break;
+      case 'night':     setNight(!S.night); break;
+      case 'hap':       S.hap = !S.hap; syncSettings(); logEvent('⚙️ الاهتزاز: '+(S.hap?'مفعّل':'موقوف')); break;
+      case 'auto':      S.auto = !S.auto; syncSettings(); logEvent('⚙️ الانتقال التلقائي: '+(S.auto?'مفعّل':'موقوف')); break;
+      case 'wPlus':     S.wPlus = !S.wPlus; logEvent('🧩 الودجت: زر التسجيل '+(S.wPlus?'مفعّل':'موقوف')); break;
+      case 'wSetName':  S.wSetName = !S.wSetName; logEvent('🧩 الودجت: اسم المجموعة '+(S.wSetName?'ظاهر':'مخفي')); break;
+      case 'bg':        S.bg = !S.bg; logEvent('🖼️ خلفية المجموعة: '+(S.bg?'مفعّلة':'موقوفة')); break;
+      case 'sound':     S.sound = !S.sound; playSound('click');
+                        logEvent('🔊 الصوت: '+(S.sound?'مفعّل (نقرة + نغمة إتمام)':'موقوف')); break;
+    }
+    render(); renderMenu(); return;
+  }
+
+  if (k === 'seg'){
+    const v = +b;
+    if (a === 'fs'){ S.fs = v; applyLayout(); logEvent('🔠 حجم الخط: '+FSL[v]); }
+    if (a === 'wpm'){ S.wpmIdx = v; updatePromptUI(); logEvent('⏩ الوتيرة: '+WPM_LABEL[v]); }
+    if (a === 'wMode'){ S.wMode = v===0?'current':'summary'; logEvent('🧩 نمط الودجت: '+(v===0?'الذكر الحالي':'ملخّص المجموعة')); }
+    if (a === 'bgOp'){ S.bgOp = [0.35,0.55,0.78][v]; logEvent('🌗 شدّة الخلفية: '+['خافتة','متوسطة','واضحة'][v]); }
+    render(); renderMenu(); return;
+  }
+}
+
+/* ── فتح/إغلاق ── */
+function openMenu(page){
+  S.menu = true; S.page = page || 'main';
+  el.menu.classList.add('on'); el.mscrim.classList.add('on');
+  el.menuBtn.classList.add('on');
+  renderMenu();
+  applyLayout();                       // يخفي الشريط والعدّاد تحت القائمة
+  logEvent('☰ فُتحت القائمة' + (page && page!=='main' ? ' — '+(page==='sets'?'المجموعات':'إعدادات الودجت') : ''));
+}
+function closeMenu(){
+  S.menu = false;
+  el.menu.classList.remove('on'); el.mscrim.classList.remove('on');
+  el.menuBtn.classList.remove('on');
+  applyLayout();                       // يعيد الشريط والعدّاد بعد إغلاق القائمة
+}
+function toggleMenu(){ S.menu ? closeMenu() : openMenu('main'); }
+
+/* ── الوضع الليلي موحّد (القائمة + مفتاح الإعدادات) ── */
+function setNight(on){
+  S.night = on;
+  el.screen.style.filter = on ? 'brightness(.55)' : '';
+  syncSettings();
+  logEvent('⚙️ الوضع الليلي: ' + (on?'مفعّل':'موقوف'));
+}
+/* مزامنة مفاتيح شاشة الإعدادات مع حالة القائمة */
+function syncSettings(){
+  document.querySelectorAll('.sw[data-k]').forEach(sw=>{
+    const k = sw.dataset.k;
+    const on = k==='auto'?S.auto : k==='hap'?S.hap : k==='night'?S.night : true;
+    sw.classList.toggle('on', on);
+  });
+}
+
+/* ═══════ تبديل طريقة العرض ═══════ */
+function applyLayout(){
+  // 🚫 القائمة المفتوحة تطغى على كل شيء: لا يطفو الشريط ولا العدّاد فوقها
+  el.promptBar.classList.toggle('on', (S.prompt || S.read) && !S.menu);
+  const bd = $('btnDist'); if (bd){ bd.classList.toggle('on', S.dist);
+    bd.style.display = S.read ? 'none' : ''; }            // 👁️ انتقل للأعلى في وضع القراءة
+  const pb = $('btnPrompt'); if (pb){ pb.classList.toggle('on', S.prompt && !S.paused);
+    pb.style.display = S.read ? 'none' : ''; }            // 📜 انتقل للأعلى في وضع القراءة
+  el.ringLayout.style.display = S.read ? 'none' : 'flex';
+  el.readLayout.classList.toggle('on', S.read);
+  el.badge.classList.toggle('on', S.read && !S.menu);
+  el.badge.classList.toggle('left', !S.badgeRight);
+  // ✋🎡 أزرار المحاكاة تظهر مع وضع العدّ المناسب فقط
+  const bm = $('btnMotion'), bc = $('btnCrown'), bd2 = $('btnDist'), bp2 = $('btnPrompt');
+  if (bm) bm.style.display = (S.cMode === 1 && !S.read) ? '' : 'none';
+  if (bc) bc.style.display = (S.cMode === 2 && !S.read) ? '' : 'none';
+  // مؤشر الحساسية/الوضع في سطر الحالة
+  if (el.status && !S.aod){
+    el.status.textContent = S.cMode === 1 ? 'العدّ بالحركة — يكفي تحريك الرسغ'
+                          : S.cMode === 2 ? 'العدّ بالتاج — دوّر للأعلى'
+                          : 'العدّ مستمر — حتى 10:42';
+  }
+  el.dhikr.style.display = S.read ? 'none' : '';
+  el.meta.style.display = S.read ? 'none' : '';
+
+  el.readLayout.classList.remove('fs0','fs1','fs2');
+  el.readLayout.classList.add('fs' + S.fs);
+  $('v-counter').classList.toggle('read-mode', S.read);
+  if (S.read && !S.prompt) el.rdScroll.scrollTop = S.y;
+}
+function toggleLayout(){
+  S.read = !S.read;
+  haptic('click');
+  logEvent(S.read ? '📖 وضع القراءة: النص كامل + عدّاد صغير في الزاوية'
+                  : '◯ الوضع العادي: حلقة كبيرة', 'ok');
+  render(); applyLayout();
+}
+function cycleFont(){
+  S.fs = (S.fs + 1) % 3;
+  applyLayout();
+  logEvent('🔠 حجم الخط: ' + ['صغير','متوسط','كبير'][S.fs]);
+}
+
+/* ═══════ الضغط المزدوج ═══════ */
+function doubleTap(){
+  el.pinch.classList.remove('go'); void el.pinch.offsetWidth; el.pinch.classList.add('go');
+  if (S.aod){ toast('لا تعمل الإيماءة والشاشة خافتة — ارفع رسغك أولًا');
+    logEvent('🚫 إيماءة في الوضع الخافت — رفضها النظام (كما في الساعة الحقيقية)','bad'); return; }
+  if (S.done){ toast('المجموعة مكتملة — اختر إعادة أو مجموعة أخرى'); return; }
+  const target = S.read ? el.badge : el.ring;
+  target.classList.add('hl');
+  setTimeout(()=>{ target.classList.remove('hl'); tap('gesture'); }, 430);
+}
+
+let toastTimer = null;
+function toast(msg){
+  el.toast.textContent = msg; el.toast.classList.add('on');
+  clearTimeout(toastTimer); toastTimer = setTimeout(()=>el.toast.classList.remove('on'), 2600);
+}
+
+function toggleAOD(){
+  S.aod = !S.aod;
+  el.aod.classList.toggle('on', S.aod);
+  el.status.textContent = S.aod
+    ? (S.cMode === 1 ? 'يد للأسفل — والعدّ بالحركة يعمل ✓'
+      : S.cMode === 2 ? 'يد للأسفل — والتاج متاح ✓'
+      : 'يد للأسفل — الشاشة خافتة، الجلسة مستمرة')
+    : (S.cMode === 1 ? 'العدّ بالحركة — يكفي تحريك الرسغ'
+      : S.cMode === 2 ? 'العدّ بالتاج — دوّر للأعلى'
+      : 'العدّ مستمر — حتى 10:42');
+  el.status.classList.toggle('warn', S.aod);
+  logEvent(S.aod ? '⌚️ تغيّر وضع اليد — خفّت الشاشة (العدّ محفوظ)'
+                 : '👁️ رفع الرسغ — الشاشة مضيئة والإيماءة متاحة', S.aod ? '' : 'ok');
+}
+
+/* ═══════ الربط ═══════ */
+document.querySelectorAll('.tab').forEach(t=>{
+  t.onclick = ()=>{
+    if (S.menu) closeMenu();
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));
+    t.classList.add('on');
+    document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));
+    $('v-'+t.dataset.v).classList.add('on');
+  };
+});
+bind('btnSetsBack', ()=>{ const t=document.querySelector('.tab[data-v="counter"]'); if(t&&t.click) t.click(); });
+bind('btnSetBack',  ()=>{ const t=document.querySelector('.tab[data-v="counter"]'); if(t&&t.click) t.click(); });
+bind('btnReset',    resetCurrent);
+bind('ring',        ()=>{ if(!S.aod) tap('tap'); else toast('الشاشة خافتة'); });
+bind('actGesture',  doubleTap);
+bind('actTap',      ()=>{ if(!S.aod) tap('tap'); });
+bind('actSkip',     skip);
+bind('actWrist',    toggleAOD);
+bind('actDecrement',decrement);
+bind('actFinish',   finishFreeSession);
+bind('actSets',     ()=>{ const t=document.querySelector('.tab[data-v="sets"]'); if(t&&t.click) t.click(); renderSets(); });
+bind('actStack',    ()=>{
+  document.querySelector('.tab[data-v="stack"]').click();
+  doubleTap();
+  setTimeout(()=>tap('widget'), 500);
+  logEvent('📚 فتح الودجت + عدّ من داخله');
+});
+bind('stackPlus', ()=>{ if (S.aod){ toast('ارفع رسغك أولًا'); return; } tap('widget'); });
+{ const rs = $('rdScroll'); if (rs) rs.addEventListener('wheel', ()=>{ if (S.prompt && !S.paused){ togglePause(); toast('أوقفتُ التلقين — اضغط ↺ للاستمرار'); } }, {passive:true}); }
+bind('pbPlay',  togglePause);
+bind('pbSpeed', cycleWpm);
+bind('pbDist',  toggleDist);
+bind('menuBtn', toggleMenu);
+bind('btnMenu', ()=> openMenu('main'));
+bind('btnMotion', simulateMotion);      // ✋ محاكاة نكزة رسغ (وضع العدّ بالحركة)
+bind('btnCrown',  crownTick);           // 🎡 محاكاة نقرة تاج (وضع العدّ بالتاج)
+bind('mscrim',  closeMenu);
+{ const m = $('menu'); if (m) m.addEventListener('click', e=>{
+    const t = e.target.closest('[data-act]');
+    if (t) menuAct(t.dataset.act);
+  }); }
+bind('badge',    ()=>{ if (S.aod){ toast('ارفع رسغك أولًا'); return; } tap('tap'); });
+bind('rdScroll', ()=>{ if (S.aod){ toast('ارفع رسغك أولًا'); return; } tap('tap'); });
+bind('btnPrompt', ()=>{ if (!S.read) toggleLayout(); noScrollWarned=false; startPrompt(); });
+bind('btnDist',   ()=>{ if (!S.read) toggleLayout(); toggleDist(); });
+bind('actMenu',      ()=> openMenu('main'));
+bind('actBg',        ()=>{ S.bg = !S.bg; applyBackground(); renderMenu();
+  logEvent('🖼️ خلفية المجموعة: '+(S.bg?'مفعّلة':'موقوفة')); toast(S.bg?'خلفية المجموعة مفعّلة':'خلفية المجموعة موقوفة'); });
+bind('actWidgetCfg', ()=> openMenu('widget'));
+bind('actRead',      ()=>{ toggleLayout(); if (S.read && !S.prompt) startPrompt(); });
+bind('actPrompt',    ()=>{ if (!S.read) toggleLayout(); noScrollWarned=false; startPrompt(); });
+bind('actDist',      toggleDist);
+bind('actTry',       ()=>{
+  selectSet(1);                     // أذكار الصباح
+  S.ii = 0; S.c = 0; render();      // أول ذكر: آية الكرسي (نص طويل)
+  if (!S.read) toggleLayout();
+  noScrollWarned = false;
+  setTimeout(()=>{ render(); startPrompt(); }, 60);   // مهلة لجعل التخطيط يستقر
+  logEvent('🧪 تجربة موجّهة: أذكار الصباح ← آيَةُ الْكُرْسِيّ + تشغيل التلقين', 'ok');
+});
+bind('actFont', cycleFont);
+bind('actPos',  ()=>{ S.badgeRight = !S.badgeRight; applyLayout(); renderMenu();
+  logEvent('⇋ موضع العدّاد: ' + (S.badgeRight ? 'يمين الشاشة' : 'يسار الشاشة')); });
+bind('dRestart',restartSet);
+bind('dOther',  ()=>{ hideDone(); const t=document.querySelector('.tab[data-v="sets"]'); if(t&&t.click) t.click(); renderSets(); });
+bind('dClose',  ()=>{ hideDone(); logEvent('↵ أغلقتُ رسالة الإتمام'); });
+
+document.querySelectorAll('.sw').forEach(sw=>{
+  sw.onclick = ()=>{
+    sw.classList.toggle('on');
+    const on = sw.classList.contains('on');
+    if (sw.dataset.k==='auto'){ S.auto = on; logEvent('⚙️ الانتقال التلقائي: '+(on?'مفعّل':'موقوف')); }
+    if (sw.dataset.k==='hap'){ S.hap = on; logEvent('⚙️ الاهتزاز: '+(on?'مفعّل':'موقوف')); }
+    if (sw.dataset.k==='night'){ el.screen.style.filter = on ? 'brightness(.55)' : '';
+      logEvent('⚙️ الوضع الليلي: '+(on?'مفعّل':'موقوف')); }
+  };
+});
+
+document.addEventListener('keydown', e=>{
+  if (e.code==='Space'){ e.preventDefault(); doubleTap(); }
+  if (e.code==='ArrowUp'){ e.preventDefault(); tap('tap'); }
+  if (e.code==='ArrowDown'){ e.preventDefault(); skip(); }
+  if (e.code==='KeyF' || e.code==='KeyR'){ e.preventDefault(); toggleLayout(); }
+  if (e.code==='KeyG'){ e.preventDefault(); cycleFont(); }
+  if (e.code==='Space' && e.shiftKey){ e.preventDefault(); }
+  if (e.code==='KeyT'){ e.preventDefault(); if (!S.read) toggleLayout(); togglePause(); }
+  if (e.code==='KeyD'){ e.preventDefault(); toggleDist(); }
+  if (e.code==='KeyM'){ e.preventDefault(); toggleMenu(); }
+  if (e.code==='Escape' && S.menu){ e.preventDefault(); closeMenu(); }
+});
+
+/* ═══════ البداية ═══════ */
+logEvent('🌙 فتح التطبيق — الجلسة الممتدة نشطة');
+logEvent('اختر مجموعة من «المجموعات»، أو ابدأ الإيماءة بمفتاح المسافة');
+logEvent('جرّب وضع القراءة 📖 — نص الذكر كاملًا وعدّاد صغير في الزاوية (مفتاح F)', 'ok');
+logEvent('والتلقين 📜 — تمرير تلقائي بوتيرة قراءة (مفتاح T) · الرؤية من بعيد 👁️ (مفتاح D)', 'ok');
+logEvent('☰ القائمة المنسدلة في الزاوية العلوية اليسرى — كل الإعدادات والمجموعات وإعدادات الودجت (مفتاح M)', 'ok');
+logEvent('🖼️ خلفية خافتة متناسقة لكل مجموعة — بدّلها من القائمة ← العرض', 'ok');
+renderSets(); render(); applyLayout(); updatePromptUI(); renderMenu();
+</script>
+</body>
+</html>

@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>رفع المشروع بـ GitHub Desktop — بالصور</title>
+<style>
+  :root{
+    --ink:#12161c; --muted:#5b6572; --line:#e3e7ee; --bg:#f6f8fb;
+    --blue:#1f6feb; --red:#e5484d; --green:#1a7f37; --card:#fff;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:"Segoe UI","Noto Naskh Arabic",Tahoma,Arial,sans-serif;line-height:1.9}
+  .wrap{max-width:860px;margin:0 auto;padding:28px 18px 70px}
+  h1{font-size:26px;margin:6px 0 4px}
+  h2{font-size:20px;margin:34px 0 10px;padding-bottom:8px;border-bottom:2px solid var(--line)}
+  p{margin:8px 0}
+  .lead{background:#fff;border:1px solid var(--line);border-right:6px solid var(--blue);
+    border-radius:12px;padding:14px 16px;margin:14px 0 6px}
+  .warn{background:#fff6f6;border:1px solid #ffd9da;border-right:6px solid var(--red);
+    border-radius:12px;padding:12px 16px;margin:14px 0}
+  .ok{background:#f1fbf3;border:1px solid #cdeed6;border-right:6px solid var(--green);
+    border-radius:12px;padding:12px 16px;margin:14px 0}
+  .muted{color:var(--muted);font-size:14.5px}
+  .step{background:var(--card);border:1px solid var(--line);border-radius:14px;
+    padding:16px 18px;margin:16px 0;box-shadow:0 1px 2px rgba(16,24,40,.04)}
+  .step h3{margin:0 0 8px;font-size:18px}
+  .step ol{margin:6px 0 0;padding-inline-start:22px}
+  .step li{margin:6px 0}
+  code{background:#eef2f7;border:1px solid #e1e7ef;border-radius:6px;
+    padding:1px 6px;font-size:13.5px;font-family:Consolas,Menlo,monospace;direction:ltr;display:inline-block}
+  /* ── مخطّط نافذة ── */
+  .win{background:#fff;border:1px solid #d8dee7;border-radius:10px;overflow:hidden;
+    margin:12px 0;font-size:14px;box-shadow:0 6px 18px rgba(16,24,40,.07)}
+  .bar{background:#eceff4;border-bottom:1px solid #d8dee7;padding:7px 12px;
+    display:flex;align-items:center;gap:6px}
+  .dot{width:10px;height:10px;border-radius:50%;background:#c9cfd8}
+  .bartitle{margin-inline-start:10px;color:#4a5361;font-size:12.5px}
+  .menu{display:flex;gap:16px;padding:8px 14px;border-bottom:1px solid #eef1f5;
+    color:#3b4450}
+  .menu span{position:relative;padding:2px 4px;border-radius:6px}
+  .hl{background:#fff3c4;outline:2px solid #e9b949}
+  .body{padding:14px}
+  .drop{border:1px solid #d8dee7;border-radius:8px;width:250px;margin:6px 14px 14px;
+    overflow:hidden;font-size:13.5px}
+  .drop div{padding:7px 12px;border-bottom:1px solid #f0f3f7}
+  .drop div:last-child{border-bottom:0}
+  .field{display:flex;align-items:center;gap:8px;margin:8px 0}
+  .inp{flex:1;border:1px solid #d8dee7;border-radius:7px;padding:7px 10px;
+    background:#fbfcfe;color:#5b6572}
+  .btn{display:inline-block;background:var(--blue);color:#fff;border-radius:8px;
+    padding:7px 16px;font-size:13.5px;font-weight:600}
+  .btn.gray{background:#e9edf3;color:#2b323c}
+  .btn.center{margin:0 auto;display:block;width:max-content}
+  .chk{display:flex;align-items:center;gap:8px;margin:10px 0}
+  .box{width:15px;height:15px;border:1.5px solid #b9c1cc;border-radius:4px;background:#fff;
+    display:inline-flex;align-items:center;justify-content:center;font-size:12px;color:#1a7f37}
+  .box.on{border-color:#1a7f37;background:#eafaef}
+  .num{display:inline-flex;align-items:center;justify-content:center;
+    width:22px;height:22px;border-radius:50%;background:var(--red);color:#fff;
+    font-size:13px;font-weight:700;margin-inline-end:6px;flex:none}
+  .tag{display:inline-block;background:#eef4ff;color:#1a4fbf;border-radius:20px;
+    padding:1px 10px;font-size:12.5px;margin-inline-start:6px}
+  table{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--line);
+    border-radius:10px;overflow:hidden;font-size:14.5px}
+  th,td{padding:9px 12px;border-bottom:1px solid #eef1f5;text-align:right}
+  th{background:#f3f6fa;font-weight:600}
+  tr:last-child td{border-bottom:0}
+  .kbd{border:1px solid #c9cfd8;border-bottom-width:2px;border-radius:6px;
+    padding:0 6px;background:#f8fafc;font-size:13px;direction:ltr;display:inline-block}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>📤 خطوة الرفع — مشروحة بالمخطّطات</h1>
+  <p class="lead">
+    <b>الفكرة في كلمتين:</b> برنامج <b>GitHub Desktop</b> يشبه “موزّع” صغير: يأخذ مجلد مشروعك من جهازك ويضعه في
+    <b>خزانة على الإنترنت</b> اسمها GitHub. وبما أن الخزانة فيها سيرفر بناء مجاني، يبدأ تلقائيًا بعد الرفع ببناء التطبيق.
+    <br><span class="muted">لا تحتاج أن تفهم كلمة واحدة من الكود. كل ما ستفعله: ٦ نقرات في هذا البرنامج.</span>
+  </p>
+
+  <div class="warn">
+    <b>قبل أي شيء — تأكد من شيئين:</b><br>
+    ① نزّلت ملف <code>TasbihWatch.zip</code> من هذه المساحة <b>وفككت ضغطه</b> (زر يمين ← Extract All / استخراج)
+    حتى صار عندك مجلد اسمه <code>TasbihWatch</code>.<br>
+    ② عندك <b>حاسوب</b> (ويندوز أو ماك). — إن كان لديك جوال فقط، لا تكمل وقل لي، سأعطيك طريقًا آخر.
+  </div>
+
+  <!-- ١ -->
+  <h2>الخطوة ١ — ثبّت البرنامج وسجّل الدخول</h2>
+  <div class="step">
+    <ol>
+      <li>افتح <code>desktop.github.com</code> ← <b>Download for Windows</b> (أو Mac) ← ثبّته مثل أي برنامج: Next ← Next ← Finish.</li>
+      <li>افتح البرنامج. ستظهر شاشة الترحيب. اضغط الزر:
+        <span class="tag">Sign in to GitHub.com</span> — سيفتح المتصفح ليأخذ موافقتك، ثم ارجع للبرنامج.</li>
+      <li>إن لم يكن لديك حساب بعد: [<code>github.com/signup</code>] ← بريد ← كلمة سر ← اسم مستخدم بالإنجليزية ← رمز يصلك بالبريد.</li>
+    </ol>
+    <div class="win">
+      <div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span>
+        <span class="bartitle">GitHub Desktop</span></div>
+      <div class="body" style="text-align:center;padding:26px 14px">
+        <div style="font-size:20px;margin-bottom:14px">Welcome to GitHub Desktop</div>
+        <span class="btn">Sign in to GitHub.com</span>
+        <div class="muted" style="margin-top:12px">(إن ظهرت هذه الشاشة، اضغط الزر الأزرق وسجّل دخولك)</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ٢ -->
+  <h2>الخطوة ٢ — أضِف مجلد المشروع من قائمة File</h2>
+  <div class="step">
+    <p><span class="num">١</span>في <b>أعلى نافذة البرنامج</b> توجد قائمة كلمات صغيرة
+      (<code>File</code> · <code>Edit</code> · <code>View</code> …). <b>اضغط كلمة</b> <code>File</code>.</p>
+    <p><span class="num">٢</span>ستنزل قائمة — اختر منها <b>أول سطر تقريبًا</b>:
+      <code>Add local repository…</code> (معناها: «أضِف مستودعًا موجودًا على جهازي»).</p>
+
+    <div class="win">
+      <div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span>
+        <span class="bartitle">GitHub Desktop</span></div>
+      <div class="menu">
+        <span class="hl">File ▼</span><span>Edit</span><span>View</span><span>Repository</span><span>Branch</span><span>Help</span>
+      </div>
+      <div class="drop">
+        <div>New repository…</div>
+        <div class="hl">Add local repository… <span class="num" style="margin:0 4px">٢</span></div>
+        <div>Clone repository…</div>
+        <div>Options…</div>
+      </div>
+      <div class="muted" style="padding:0 14px 14px">☝️ المربّع الأصفر = المكان الذي ستضغط عليه</div>
+    </div>
+  </div>
+
+  <!-- ٣ -->
+  <h2>الخطوة ٣ — اختر مجلد TasbihWatch</h2>
+  <div class="step">
+    <ol>
+      <li>ستُفتح نافذة صغيرة فيها خانة طويلة اسمها <b>Local path</b> وبجانبها زر <span class="tag">Choose…</span></li>
+      <li>اضغط <b>Choose…</b> ← تظهر نافذة ملفات جهازك ← <b>اختر مجلد</b> <code>TasbihWatch</code> (الذي فككت ضغطه) ← OK</li>
+      <li>اضغط الزر الأزرق <span class="tag">Add repository</span></li>
+    </ol>
+    <div class="win">
+      <div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span>
+        <span class="bartitle">Add local repository</span></div>
+      <div class="body">
+        <div class="field">
+          <span>Local path</span>
+          <span class="inp">C:\Users\اسمك\Downloads\TasbihWatch</span>
+          <span class="btn gray">Choose…</span>
+        </div>
+        <div class="field" style="justify-content:flex-start">
+          <span class="btn">Add repository</span>
+          <span class="muted" style="margin-inline-start:10px">← اضغط هذا بعد اختيار المجلد</span>
+        </div>
+        <div class="ok" style="margin:10px 0 0">
+          ✅ <b>لن تظهر لك أي رسالة تحذير</b> — جهّزتُ المجلد مسبقًا ليكون “مستودعًا” جاهزًا.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ٤ -->
+  <h2>الخطوة ٤ — زر النشر الأزرق</h2>
+  <div class="step">
+    <p>بعد الإضافة، ستتغيّر نافذة البرنامج وتبدو مثل نافذة “رسائل”: على اليمين قائمة التغييرات، وعلى اليسار الملفات.
+      انظر <b>أعلى منتصف النافذة</b> وستجد زرًا أزرق: <span class="tag">Publish repository</span> ← اضغطه.</p>
+    <div class="win">
+      <div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span>
+        <span class="bartitle">TasbihWatch — GitHub Desktop</span></div>
+      <div class="body" style="text-align:center;padding:18px">
+        <span class="btn">⬆ Publish repository</span>
+        <div class="muted" style="margin-top:10px">هذا الزر يظهر في أعلى نافذة البرنامج عند منتصفها</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ٥ -->
+  <h2>الخطوة ٥ — أهم نقرة: أزل علامة “خاص”</h2>
+  <div class="step">
+    <p>ستُفتح نافذة صغيرة فيها: خانة الاسم <b>Name</b> · وصف <b>Description</b> (اتركه فارغًا) ·
+      ومربّع اختيار مكتوب جانبه <code>Keep this code private</code>.</p>
+    <p><span class="num">❶</span> <b>اضغط على المربّع</b> حتى <b>تختفي العلامة ✔</b> ← هذا يجعل المشروع “عامًّا”، وبذلك تكون سيرفرات البناء المجانية بلا حد.</p>
+    <p><span class="num">❷</span> ثم اضغط الزر الأزرق <span class="tag">Publish repository</span> وانتظر شريط التقدم ثوانٍ.</p>
+    <div class="win">
+      <div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span>
+        <span class="bartitle">Publish repository</span></div>
+      <div class="body">
+        <div class="field"><span style="width:90px">Name</span><span class="inp">tasbih-watch</span></div>
+        <div class="field"><span style="width:90px">Description</span><span class="inp" style="color:#aeb6c2">(اتركه فارغًا)</span></div>
+        <div class="chk">
+          <span class="box"></span>
+          <span><b>Keep this code private</b></span>
+          <span class="num" style="background:var(--red)">❶</span>
+          <span class="muted">← أزل العلامة من هذا المربّع (اجعل المشروع عامًّا مجانيًا)</span>
+        </div>
+        <div class="field"><span class="btn">Publish repository</span><span class="num">❷</span></div>
+      </div>
+    </div>
+    <div class="ok">🎉 انتهى! انتقل إلى الجزء الأخير لترى النتيجة.</div>
+  </div>
+
+  <!-- ═══════════ الجزء الثاني ═══════════ -->
+  <h2>🎯 الجزء الثاني — بعد الرفع: أين ترى النتيجة؟ (٤ شاشات)</h2>
+  <p class="lead">
+    كل ما في هذا الجزء يحدث في <b>المتصفح</b> (كروم/سفاري) لا في البرنامج.
+    افتح [<code>github.com</code>] وسجّل دخولك بحسابك.
+    <br><span class="muted">والأهم: لا تحتاج أن تفهم أي شيء تقني — فقط اعرف <b>أين تنظر</b>.</span>
+  </p>
+
+  <!-- شاشة ٦ -->
+  <div class="step">
+    <h3>🔎 شاشة ٦ — صفحة مشروعك: اضغط كلمة Actions</h3>
+    <p>بعد الدخول ستجد قائمة <b>Your repositories</b> ← اضغط اسم <code>tasbih-watch</code>.
+       ستُفتح صفحة مشروعك وفي أعلاها <b>شريط كلمات صغيرة</b> — اضغط الكلمة الخامسة تقريبًا: <b>Actions</b>.</p>
+    <div class="win">
+      <div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span>
+        <span class="bartitle">github.com/اسمك/tasbih-watch</span></div>
+      <div class="menu">
+        <span>Code</span><span>Issues</span><span>Pull requests</span>
+        <span class="hl">Actions <span class="num" style="margin:0 6px">👇</span></span>
+        <span>Projects</span><span>Wiki</span><span>Security</span><span>Insights</span>
+      </div>
+      <div class="muted" style="padding:10px 14px">
+        ☝️ هذا الشريط موجود أعلى أي صفحة مشروع في GitHub. الكلمة المظلَّلة هي التي تضغطها.
+        <br><b>لكن ماذا يوجد داخل Actions؟</b> الشاشة التالية 👇
+      </div>
+    </div>
+  </div>
+
+  <!-- شاشة ٧ -->
+  <div class="step">
+    <h3>📋 شاشة ٧ — وهنا «السطر» الذي لم يكن واضحًا</h3>
+    <p>داخل تبويب Actions ستجد <b>قائمة على اليمين</b> فيها اسم سير العمل:
+      <b>«✅ فحص الترجمة (بلا أسرار)»</b>.
+      وفي <b>المنتصف</b> قائمة بما حدث: <b>سطر لكل تشغيل</b> (كل مرة رفعت فيها الملفات).</p>
+
+    <div class="win">
+      <div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span>
+        <span class="bartitle">Actions — tasbih-watch</span></div>
+      <div style="display:flex;gap:0">
+        <div style="border-inline-end:1px solid #eef1f5;padding:12px;min-width:210px;background:#fafbfd">
+          <div class="muted" style="margin-bottom:6px">أسماء سير العمل:</div>
+          <div class="hl" style="padding:8px 10px;border-radius:8px;font-size:13.5px">
+            ✅ فحص الترجمة (بلا أسرار)</div>
+        </div>
+        <div style="flex:1;padding:12px">
+          <div class="muted" style="margin-bottom:6px">التشغيلات (من الأحدث للأقدم): ← هنا «السطر»</div>
+          <div style="border:1px solid #e3e7ee;border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:10px">
+            <span style="font-size:17px">🟡</span>
+            <div>
+              <div style="font-weight:600">أول نسخة — تطبيق سبحة (ساعة أبل + ودجت + محاكي)</div>
+              <div class="muted">يعمل الآن… أُنشئ قبل دقيقة</div>
+            </div>
+          </div>
+          <div class="muted" style="margin-top:8px">
+            💡 اسم السطر = <b>نص “الدفعة”</b> التي رفعتها (هنا: «أول نسخة…»). اضغط على هذا السطر لتفتح التفاصيل (شاشة ٨).
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <h3 style="margin-top:18px">🚦 الرموز الثلاثة — ما معناها؟</h3>
+    <table>
+      <tr><th style="width:80px">الرمز</th><th>معناه بلغة واضحة</th><th>ما تفعله</th></tr>
+      <tr><td style="font-size:20px;text-align:center">🟡</td>
+          <td>دائرة صفراء تدور = <b>يعمل الآن</b></td>
+          <td>اتركه وارجع بعد ٧–١٠ دقائق</td></tr>
+      <tr><td style="font-size:20px;text-align:center">✅</td>
+          <td>صحّ خضراء = <b>انتهى بنجاح</b></td>
+          <td>لا شيء… التطبيق يُبنى سليمًا 🎉</td></tr>
+      <tr><td style="font-size:20px;text-align:center">❌</td>
+          <td>خطأ أحمر = <b>فشل</b> (خطأ في الشيفرة)</td>
+          <td>افتحه واقرأ الأخطاء (شاشة ٩) وأرسلها لي</td></tr>
+    </table>
+  </div>
+
+  <!-- شاشة ٨ -->
+  <div class="step">
+    <h3>🧩 شاشة ٨ — داخل التشغيل: ثلاث “مهام”</h3>
+    <p>بعد الضغط على السطر، ستُفتح صفحة فيها <b>ثلاث بطاقات</b> — كل بطاقة اسمها “مهمة” (Job):</p>
+    <div class="win">
+      <div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span>
+        <span class="bartitle">أول نسخة… — Run #1</span></div>
+      <div class="body" style="display:grid;gap:10px">
+        <div style="border:1px solid #cdeed6;background:#f6fdf8;border-radius:10px;padding:10px 12px">
+          ✅ <b>🔍 فحوصات الملفات</b> <span class="muted">— اختبارات سريعة (ثوانٍ)</span></div>
+        <div style="border:1px solid #cdeed6;background:#f6fdf8;border-radius:10px;padding:10px 12px">
+          ✅ <b>🛠️ ترجمة تطبيق الساعة (مستقل)</b> <span class="muted">— هل يُبنى التطبيق؟</span></div>
+        <div style="border:1px solid #ffd9da;background:#fff7f7;border-radius:10px;padding:10px 12px">
+          ❌ <b>🛠️ ترجمة حاوية iOS + تطبيق الساعة داخل الحاوية</b> <span class="muted">— هنا فشل</span></div>
+      </div>
+      <div class="muted" style="padding:0 14px 14px">
+        ☝️ اضغط على البطاقة التي عليها ❌ لتفتح تفاصيلها (شاشة ٩). لو كلها ✅ فأنت انتهيت!
+      </div>
+    </div>
+  </div>
+
+  <!-- شاشة ٩ -->
+  <div class="step">
+    <h3>🟥 شاشة ٩ — أين الأخطاء بالضبط؟</h3>
+    <p>عند فتح المهمة الفاشلة ستجد نفسك في صفحة فيها <b>عمود على اليمين فيه قائمة خطوات</b>.
+      انزل إلى شبه الأسفل واضغط الخطوة: <b>«📋 ملخّص النتيجة»</b>.</p>
+    <div class="win">
+      <div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span>
+        <span class="bartitle">🛠️ ترجمة… (فشلت)</span></div>
+      <div style="display:flex">
+        <div style="border-inline-end:1px solid #eef1f5;padding:12px;min-width:200px;background:#fafbfd;font-size:13px">
+          <div style="padding:4px 6px">جلب الشيفرة</div>
+          <div style="padding:4px 6px">تثبيت XcodeGen</div>
+          <div style="padding:4px 6px">توليد مشروع Xcode</div>
+          <div style="padding:4px 6px">🛠️ ترجمة بلا توقيع</div>
+          <div class="hl" style="padding:6px;border-radius:8px">📋 ملخّص النتيجة</div>
+          <div style="padding:4px 6px">رفع سجل البناء</div>
+        </div>
+        <div style="flex:1;padding:12px">
+          <div style="background:#0d1117;color:#e6edf3;border-radius:10px;padding:10px 12px;font-family:Consolas,monospace;direction:ltr;font-size:12.5px;line-height:1.7">
+            ═══ project.yml — ترجمة تطبيق الساعة ═══<br>
+            ❌ BUILD FAILED — الأخطاء:<br>
+            <span style="color:#ff7b72">error:</span> cannot find 'XYZ' in scope — CounterView.swift:120<br>
+            <span style="color:#ff7b72">error:</span> value of type 'CounterModel' has no member 'abc'
+          </div>
+          <div class="ok" style="margin-top:10px">
+            <b>الطريقة الأسهل (أضفتها لك خصيصًا):</b> أعلى هذه الصفحة نفسها يوجد <b>صندوق ملوّن (ملخص)</b>
+            مكتوب فيه الأخطاء جاهزة — <b>بدون</b> أن تفتح أي سجل:<br>
+            🟩 أخضر «نجحت الترجمة» = انتهى الأمر · 🟥 أحمر «فشلت الترجمة» + قائمة الأخطاء = انسخها أو صوّرها.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="warn">
+      <b>وأسهل من النسخ:</b> صوّر الشاشة (زر التصوير في الجوال/الحاسوب) وأرسل لي الصورة في المحادثة.
+      لست بحاجة أن تفهم الأخطاء — أنا سأصلحها وأقول لك ماذا تضغط بعدها.
+    </div>
+  </div>
+
+  <div class="ok">
+    <b>ملخّص الرحلة كلها في ٤ خطوات:</b>
+    ① رفعت الملفات بتطبيق GitHub Desktop ←
+    ② فتحت github.com ← تبويب <b>Actions</b> ←
+    ③ ضغطت على السطر «أول نسخة» ورأيت البطاقات الثلاث ←
+    ④ كلها ✅ = مبروك · فيها ❌ = صوّرها وأرسلها لي.
+  </div>
+
+  <!-- ═══════════ الجزء الثالث ═══════════ -->
+  <h2>🇬🇧 الجزء الثالث — «كل شيء إنجليزي… ولا أرى الاسم العربي!»</h2>
+
+  <div class="warn">
+    <b>الشيء الطبيعي أولًا:</b> موقع GitHub <b>لا يدعم واجهة بالعربية</b> — كل أزراره إنجليزية.
+    لا تحتاج أن تقرأه؛ سأقول لك <b>على أي زر بالضبط</b> تضغط. 🌍
+  </div>
+
+  <div class="warn" style="background:#fffdf3;border-color:#ffe9a8;border-inline-end-color:#e9b949">
+    <b>معنى ما تراه الآن:</b> إن كانت صفحة Actions فيها <b>بطاقات إنجليزية</b> مثل
+    <code>Simple workflow</code> · <code>Node.js</code> · <code>Python application</code> ·
+    <code>More continuous integration workflows…</code>
+    → فمعناها أن <b>ملف “سير العمل” غير موجود</b> داخل مشروعك (لم يُرفع، أو كان مخفيًا أثناء السحب والإفلات).
+    <br>الحل: ٤ نقرات + لصقة واحدة 👇
+  </div>
+
+  <div class="step">
+    <h3>🅰️ شاشة ١٠ — هذه هي الصفحة التي تراها (بطاقات إنجليزية)</h3>
+    <div class="win">
+      <div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span>
+        <span class="bartitle">Actions — Get started with GitHub Actions</span></div>
+      <div class="body">
+        <div class="muted" style="margin-bottom:8px">هذه البطاقات <b>ليست من مشروعنا</b> — إنها «قوالب» يقترحها GitHub على من لا يملك سير عمل بعد.</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:13px">
+          <div style="border:1px solid #e3e7ee;border-radius:8px;padding:8px">Simple workflow</div>
+          <div style="border:1px solid #e3e7ee;border-radius:8px;padding:8px">Node.js</div>
+          <div style="border:1px solid #e3e7ee;border-radius:8px;padding:8px">Python application</div>
+          <div style="border:1px solid #e3e7ee;border-radius:8px;padding:8px">More continuous integration workflows…</div>
+        </div>
+        <div class="field" style="margin-top:12px">
+          <span class="btn">⚙️ set up a workflow yourself <span class="num" style="margin:0 6px">👇</span></span>
+          <span class="muted">← هذا هو الزر الذي تضغطه (تجد معناه: “أنشئ سير عمل بنفسك”)</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="step">
+    <h3>🅱️ شاشة ١١ — الصق ملف التشغيل ثم Commit</h3>
+    <ol>
+      <li>بالضغط على الزر السابق سيُفتح <b>محرر ملفات</b> داخلي، وفيه في الأعلى خانة اسم الملف مكتوب فيها
+        <code>.github/workflows/main.yml</code> ← <b>اتركها كما هي</b>.</li>
+      <li>داخل المستطيل الكبير ستجد سطورًا إنجليزية (قالب) ← اضغط داخل المستطيل ثم
+        <span class="kbd">Ctrl</span> + <span class="kbd">A</span> (تحديد الكل) ثم <span class="kbd">Delete</span>.</li>
+      <li>افتح من هذه المساحة الملف <b><code>ملف-التشغيل-لأول-تجربة.yml</code></b> ← حدِّد كل محتواه ← انسخه ← الصقه في المستطيل.</li>
+      <li>اضغط الزر الأخضر أعلى اليمين <span class="tag" style="background:#eafaef;color:#1a7f37">Commit changes…</span>
+        ← في النافذة الصغيرة اضغط <b>Commit changes</b> مرة أخرى.</li>
+    </ol>
+    <div class="win">
+      <div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span>
+        <span class="bartitle">Editing .github/workflows/main.yml</span></div>
+      <div class="body">
+        <div class="field"><span class="muted">اسم الملف ←</span><span class="inp">.github/workflows/main.yml</span></div>
+        <div style="border:1px solid #d8dee7;border-radius:8px;background:#f8fafc;padding:10px;
+             font-family:Consolas,monospace;direction:ltr;font-size:12.5px;color:#4a5361">
+          name: تجربة بناء التطبيق<br>on:<br>&nbsp;&nbsp;push:<br>jobs:<br>&nbsp;&nbsp;build:<br>&nbsp;&nbsp;&nbsp;&nbsp;runs-on: macos-15<br>
+          <span class="muted">… (انسخ الباقي من الملف الذي في المساحة)</span>
+        </div>
+        <div class="field" style="margin-top:10px">
+          <span class="btn" style="background:#1a7f37">Commit changes…</span>
+          <span class="num" style="margin:0 6px">٤</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="step">
+    <h3>🎯 شاشة ١٢ — الآن سيظهر الاسم العربي (وهذه هي العلامة أن كل شيء نجح)</h3>
+    <p>ارجع إلى تبويب <b>Actions</b> ← ستجد في القائمة اليمنى <b>«تجربة بناء التطبيق»</b> بالعربية،
+       وفي المنتصف سطر تشغيل جديد بجانبه 🟡 (يعمل) ثم ✅ (نجح).</p>
+    <div class="win">
+      <div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span>
+        <span class="bartitle">Actions — بعد إضافة الملف</span></div>
+      <div style="display:flex">
+        <div style="border-inline-end:1px solid #eef1f5;padding:12px;min-width:210px;background:#fafbfd">
+          <div class="muted" style="margin-bottom:6px">أسماء سير العمل:</div>
+          <div class="hl" style="padding:8px 10px;border-radius:8px;font-size:13.5px">تجربة بناء التطبيق ✅</div>
+        </div>
+        <div style="flex:1;padding:12px">
+          <div style="border:1px solid #e3e7ee;border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:10px">
+            <span style="font-size:17px">✅</span>
+            <div><div style="font-weight:600">نجح بناء التطبيق</div>
+              <div class="muted">اكتمل قبل دقيقة</div></div>
+          </div>
+          <div class="ok" style="margin-top:10px">🎉 هذا هو “الاسم العربي” الذي كنت تبحث عنه! إن ظهر ✅ فالتطبيق يُبنى بنجاح.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h2>لو توقفت في مكان (أو ظهر شيء لم أفهمه)</h2>
+  <table>
+    <tr><th>ما تراه</th><th>ما تفعله</th></tr>
+    <tr><td>البرنامج يسألني عن حساب / كلمة سر</td><td>سجّل دخولك في المتصفح ثم “Authorize”؛ هكذا يفعل البرنامج دائمًا (لا يعطيك كلمات سر داخله)</td></tr>
+    <tr><td>لا أجد كلمة <code>File</code></td><td>إن كنت على ماك: القوائم تظهر في شريط أعلى شاشة الماك (وليس في النافذة)</td></tr>
+    <tr><td>زر Publish repository رمادي/معطّل</td><td>تأكد أنك اخترت المجلد فعلًا في الخطوة ٣ وأن اسمك يظهر أعلى اليسار (مسجّل الدخول)</td></tr>
+    <tr><td>طلبت الحزمة Zip كلمة سر عند فكّها</td><td>لا كلمة سر — فُكّها بزر يمين ← Extract All فقط</td></tr>
+    <tr><td>ظهرت رسالة “does not appear to be a Git repository”</td><td>اضغط الرابط <b>create a repository</b> الظاهر في الرسالة (لن تظهر عادةً عندك)</td></tr>
+    <tr><td>فتحت GitHub ولا أجد تبويب Actions</td><td>تأكد أنك داخل صفحة مشروعك (اسمه أعلى الصفحة) وأن الشاشة كبيرة — في الجوال يكون التبويب داخل قائمة «···»</td></tr>
+    <tr><td>الأخطاء كثيرة وغامضة</td><td>لا تقرأها! أعلى الصفحة يوجد صندوق الملخّص — صوّر الشاشة كاملة وأرسلها لي</td></tr>
+    <tr><td>كل الصفحة إنجليزية وفيها بطاقات <code>Simple workflow</code></td><td>طبيعي — معناه أن ملف التشغيل غير موجود. اتبع <b>الجزء الثالث</b> أعلاه (٤ نقرات + لصقة)</td></tr>
+    <tr><td>لا أجد زر <code>set up a workflow yourself</code></td><td>افتح: <b>Add file → Create new file</b>، وسمِّه بالضبط <code>.github/workflows/main.yml</code> ثم الصق المحتوى و Commit</td></tr>
+  </table>
+
+  <div class="lead">
+    <b>وأخيرًا:</b> إن تعطّلت في أي خطوة، لا تُصلح شيئًا بنفسك — <b>اكتب لي رقم الخطوة وما تراه على الشاشة</b>
+    (أو أرسل صورة للشاشة)، وأقول لك بالضبط على أي زر تضغط.
+  </div>
+
+</div>
+</body>
+</html>

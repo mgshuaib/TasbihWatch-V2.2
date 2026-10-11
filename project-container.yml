@@ -1,0 +1,182 @@
+name: Tasbih
+
+# ═══════════════════════════════════════════════════════════════════
+#  المسار «ب» — الحاوية (الخطة الاحتياطية)
+#
+#  استخدم هذا الملف فقط إذا فشل تصدير/رفع مسار أ (project.yml) بالخطأ:
+#      exportArchive exportOptionsPlist error for key "method"
+#      expected one {release-testing, enterprise, debugging}
+#
+#  السبب: أدوات أبل ترفض أرشفة تطبيق ساعة مستقل إلى App Store.
+#  الحل: نغلّف تطبيق الساعة داخل تطبيق iOS «فارغ» مع مفتاحين سحريين:
+#      ITSWatchOnlyContainer = true   → متجر أبل يعتبر المنتج «ساعة فقط»
+#      LSApplicationLaunchProhibited = true → التطبيق الفارغ لا يُشغّل أبدًا
+#  النتيجة: يمر التصدير والرفع بشكل طبيعي، ويظهر في TestFlight كتبويب ساعة.
+#
+#  طريقة التبديل: أعد تسمية هذا الملف إلى project.yml
+#  وفي workflow بدّل: SCHEME → TasbihContainer و BUILD_DESTINATION → generic/platform=iOS
+# ═══════════════════════════════════════════════════════════════════
+
+options:
+  bundleIdPrefix: com.example
+  createIntermediateGroups: true
+  deploymentTarget:
+    watchOS: "11.0"
+    iOS: "15.0"
+
+settings:
+  base:
+    MARKETING_VERSION: "1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    SWIFT_VERSION: "5.9"
+    CODE_SIGN_STYLE: Automatic
+    DEVELOPMENT_TEAM: XXXXXXXXXX
+    ENABLE_USER_SCRIPT_SANDBOXING: NO
+
+targets:
+
+  # ─────────────────────────────────────────────
+  # ① الحاوية: تطبيق iOS فارغ لا يعمل — دوره الوحيد حمل تطبيق الساعة
+  # ─────────────────────────────────────────────
+  TasbihContainer:
+    type: application
+    platform: iOS
+    sources:
+      - path: Container
+    info:
+      path: Support/TasbihContainer-Info.plist
+      properties:
+        CFBundleDisplayName: سُبحة
+        ITSWatchOnlyContainer: true
+        LSApplicationLaunchProhibited: true
+        UIDeviceFamily: [1, 2]
+        UIRequiredDeviceCapabilities: [arm64]
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.example.tasbih   # ← معرّف سجل التطبيق في App Store Connect
+        PRODUCT_NAME: Tasbih
+        TARGETED_DEVICE_FAMILY: "1,2"
+        GENERATE_INFOPLIST_FILE: NO
+        SUPPORTS_MACCATALYST: NO
+    dependencies:
+      # يُدمج تطبيق الساعة داخل الحاوية (مجلد Watch/)
+      - target: Tasbih
+        embed: true
+        codeSign: true
+
+  # ─────────────────────────────────────────────
+  # ② تطبيق الساعة الحقيقي
+  # ─────────────────────────────────────────────
+  Tasbih:
+    type: application
+    platform: watchOS
+    sources:
+      - path: Shared.swift
+      - path: Theme.swift
+      - path: Sounds.swift
+      - path: StatsView.swift
+      - path: OnboardingView.swift
+      - path: Fonts
+      - path: Sounds
+      - path: GestureCompat.swift
+      - path: Haptics.swift
+      - path: MotionCounter.swift
+      - path: SessionManager.swift
+      - path: CounterModel.swift
+      - path: CounterView.swift
+      - path: ReadingView.swift
+      - path: OptionsPanel.swift
+      - path: SetBackgrounds.swift
+      - path: MenuView.swift
+      - path: TasbihApp.swift
+      - path: Tasbih/Assets.xcassets
+    info:
+      path: Support/Tasbih-Info.plist
+      properties:
+        CFBundleDisplayName: سُبحة
+        WKApplication: true
+        WKWatchOnly: true          # ساعة مستقلة — بدون WKCompanionAppBundleIdentifier
+        # ✅ الخطوط العربية المرفقة (أميري + المراعي) — يُحمّلها نظام الساعة من هذه القائمة
+        UIAppFonts:
+          - Amiri-Regular.ttf
+          - Amiri-Bold.ttf
+          - Almarai-Regular.ttf
+          - Almarai-Bold.ttf
+        WKBackgroundModes:
+          # ✅ mindfulness: حتى ساعة كاملة (العدّ يستمر والشاشة مطفأة).
+          #    للتغيير إلى 10 دقائق فقط: استبدلها بـ self-care
+          - mindfulness
+        ITSAppUsesNonExemptEncryption: false
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.example.tasbih.watchkitapp   # ← لاحظ اللاحقة
+        PRODUCT_NAME: Tasbih
+        TARGETED_DEVICE_FAMILY: "4"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        GENERATE_INFOPLIST_FILE: NO
+    # 🔐 صلاحية مجموعة التطبيق — إلزامية ليتشارك الودجت العدّ مع التطبيق.
+    #    ⚠️ غيّر المعرّف هنا **وفي نفس الوقت** في Shared.swift → appGroupID
+    entitlements:
+      path: Support/Tasbih.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.com.yourname.tasbih
+    dependencies:
+      - target: TasbihWidgetExtension
+        embed: true
+
+  # ─────────────────────────────────────────────
+  # ③ الودجت
+  # ─────────────────────────────────────────────
+  TasbihWidgetExtension:
+    type: app-extension
+    platform: watchOS
+    sources:
+      - path: Widget
+      - path: Shared.swift
+      - path: GestureCompat.swift
+    info:
+      path: Support/TasbihWidget-Info.plist
+      properties:
+        CFBundleDisplayName: سُبحة
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.example.tasbih.watchkitapp.widget
+        PRODUCT_NAME: TasbihWidget
+        SKIP_INSTALL: YES
+        TARGETED_DEVICE_FAMILY: "4"
+        GENERATE_INFOPLIST_FILE: NO
+
+    # 🔐 نفس صلاحية مجموعة التطبيق — بدونها يقرأ الودجت أصفارًا
+    entitlements:
+      path: Support/TasbihWidget.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.com.yourname.tasbih
+
+schemes:
+  # حاوية iOS (المسار B) — تبني الحاوية + تطبيق الساعة + الودجت معًا
+  TasbihContainer:
+    build:
+      targets:
+        TasbihContainer: all
+        Tasbih: all
+        TasbihWidgetExtension: all
+    archive:
+      config: Release
+
+  # تطبيق الساعة وحده (يُستخدم في فحص الترجمة وللتشغيل على الساعة)
+  Tasbih:
+    build:
+      targets:
+        Tasbih: all
+        TasbihWidgetExtension: all
+    archive:
+      config: Release
