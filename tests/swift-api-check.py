@@ -358,11 +358,58 @@ def check_scheme_runnable() -> bool:
     return ok
 
 
+def check_debug_shots() -> bool:
+    """⑪ مدخل لقطات المتجر لا يتسرّب إلى نسخة المتجر.
+
+    `DebugShots.swift` محصور بالكامل بين #if DEBUG و #endif (يُحذف من نسخة
+    المتجر). وأي استعمال لِـ SabhaShot في ملف آخر يجب أن يكون هو الآخر داخل
+    #if DEBUG — وإلا فشلت ترجمة نسخة Release بأن «الرمز غير موجود».
+    (لقطة الودجت في المتجر لا تكفي: هذا فحص يمنع مفاجأة وقت النشر.)"""
+    print('⑪ مدخل لقطات المتجر (لا يتسرّب إلى نسخة المتجر)')
+    shots = ROOT / 'DebugShots.swift'
+    if not shots.exists():
+        print('   ⚠ DebugShots.swift غير موجود — تخطّي')
+        return True
+    src = shots.read_text(encoding='utf-8')
+    ok = True
+    # نعدّ أسطر التوجيه نفسها (لا الإشارات داخل التعليقات)
+    dirs_if = sum(1 for ln in src.splitlines() if ln.strip() == '#if DEBUG')
+    dirs_end = sum(1 for ln in src.splitlines() if ln.strip() == '#endif')
+    if dirs_if < 1 or dirs_if != dirs_end:
+        ok = False
+        print(f'   ✘ DebugShots.swift: توجيهات غير متوازنة (#if DEBUG: {dirs_if} · #endif: {dirs_end})')
+
+    files = sorted(list(ROOT.glob('*.swift')) + list((ROOT / 'Widget').glob('*.swift')))
+    offenders = []
+    for f in files:
+        if f.name == 'DebugShots.swift':
+            continue
+        depth = 0
+        for i, line in enumerate(f.read_text(encoding='utf-8').splitlines(), 1):
+            stripped = line.strip()
+            if stripped == '#if DEBUG':
+                depth += 1
+            elif stripped == '#endif' and depth > 0:
+                depth -= 1
+            if 'SabhaShot' in line.split('//')[0] and depth == 0:
+                offenders.append(f'{f.name}:{i}')
+    if offenders:
+        ok = False
+        for o in offenders:
+            print(f'   ✘ {o}: استعمال SabhaShot خارج #if DEBUG')
+    if ok:
+        uses = sum(len(re.findall(r'SabhaShot', (ROOT / f).read_text(encoding='utf-8')))
+                   for f in ['TasbihApp.swift', 'CounterView.swift', 'MenuView.swift']
+                   if (ROOT / f).exists())
+        print(f'   ✔ SabhaShot محصور في #if DEBUG ({uses} استعمالًا في التطبيق)')
+    return ok
+
+
 if __name__ == '__main__':
     ok_all = (check_apis() and check_sources() and check_dhikr_parity()
               and check_model_members() and check_risky_apis()
               and check_assets_and_sources() and check_app_group()
-              and check_scheme_runnable())
+              and check_scheme_runnable() and check_debug_shots())
     print()
     print('📊 النتيجة:', '✔ كل الفحوصات سليمة' if ok_all else '❌ توجد مشاكل أعلاه')
     sys.exit(0 if ok_all else 1)

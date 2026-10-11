@@ -158,6 +158,23 @@ struct CounterView: View {
         .onAppear {
             session.start()
             if model.countingMode == .motion { model.startMotionCounting() }
+            #if DEBUG
+            // 📸 لقطات المتجر: نفتح الشاشة المطلوبة بعد ظهور الشاشة بلحظة (التطوير فقط)
+            if let shot = SabhaShot.screen {
+                Task { @MainActor in
+                    try? await Task.sleep(nanoseconds: 700_000_000)
+                    if shot != "reading" { model.readingMode = false }
+                    switch shot {
+                    case "menu":       showMenu = true
+                    case "stats":      showMenu = true      // ثم MenuView تفتح الإحصاءات
+                    case "panel":      showPanel = true
+                    case "reading":    model.readingMode = true
+                    case "onboarding": showOnboarding = true
+                    default:           break
+                    }
+                }
+            }
+            #endif
         }
         .onChange(of: model.countingMode) { _, mode in
             if mode == .motion { model.startMotionCounting() } else { model.stopMotionCounting() }

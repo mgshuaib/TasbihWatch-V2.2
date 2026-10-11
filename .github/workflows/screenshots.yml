@@ -1,0 +1,230 @@
+name: 📸 لقطات المتجر من محاكي أبل
+
+# ════════════════════════════════════════════════════════════════════════
+#  هذا السير يشغّل التطبيق **فعلًا** على محاكي ساعة أبل على سيرفر ماك،
+#  ويصوّر أهم الشاشات صورًا حقيقية تصلح لصفحة المتجر.
+#
+#  • لا يحتاج أي أسرار ولا حساب مطوّر ولا Mac عندك.
+#  • يعمل تلقائيًا مع كل دفعة، ويمكن تشغيله يدويًا من زر Run workflow.
+#  • النتيجة: ملف «store-screenshots» في قسم Artifacts أسفل صفحة التشغيل.
+#
+#  🗝️ كيف يفتح الشاشات بلا لمس؟
+#     نمرّر اسم الشاشة مع أمر التشغيل:  -sabhaScreen reading
+#     والتطبيق يقرأها من DebugShots.swift (يعمل في نسخة التطوير فقط).
+# ════════════════════════════════════════════════════════════════════════
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:            # ← زر «Run workflow» اليدوي
+
+concurrency:
+  group: tasbih-screenshots-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  screenshots:
+    name: 🖼️ تصوير شاشات التطبيق
+    runs-on: macos-15
+    timeout-minutes: 40
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 🔎 تحديد مجلد المشروع تلقائيًا
+        run: |
+          SPEC_FILE="$(find . -name project.yml -not -path '*/node_modules/*' | head -1)"
+          if [ -z "$SPEC_FILE" ]; then echo "❌ لم أجد ملف project.yml في المستودع"; exit 1; fi
+          echo "PROJECT_DIR=$(dirname "$SPEC_FILE")" >> "$GITHUB_ENV"
+          echo "✅ وجدت المشروع في: $(dirname "$SPEC_FILE")"
+
+      - name: أحدث Xcode على السيرفر
+        run: |
+          sudo xcode-select -s "$(ls -d /Applications/Xcode*.app | sort -V | tail -1)"
+          xcodebuild -version
+
+      - name: تثبيت XcodeGen
+        run: brew install xcodegen
+
+      - name: توليد مشروع Xcode من project.yml
+        working-directory: ${{ env.PROJECT_DIR }}
+        run: xcodegen generate --spec project.yml
+
+      # ─────────────────────────────────────────────────────────────
+      #  اختيار محاكي ساعة متاح (بأحدث نظام، وأكبر شاشة)
+      #  وإن لم تكن هناك محاكيات ساعة: ننزّل نظام الساعة ثم نعيد المحاولة
+      # ─────────────────────────────────────────────────────────────
+      - name: 🕰️ اختيار محاكي ساعة متاح
+        id: sim
+        run: |
+          pick() {
+            python3 - <<'PY'
+          import json, re, subprocess, sys
+          raw = subprocess.check_output(['xcrun', 'simctl', 'list', 'devices', 'available', '--json'])
+          data = json.loads(raw)
+          best = None
+          for runtime, devices in data.get('devices', {}).items():
+              if 'watchOS' not in runtime:
+                  continue
+              m = re.search(r'watchOS[- ](\d+)[-.](\d+)', runtime)
+              rt_ver = (int(m.group(1)), int(m.group(2))) if m else (0, 0)
+              for d in devices:
+                  if 'Apple Watch' not in d.get('name', ''):
+                      continue
+                  if not d.get('isAvailable', True):
+                      continue
+                  mm = re.search(r'(\d+)\s*mm', d.get('name', ''))
+                  size = int(mm.group(1)) if mm else 40
+                  if 'SE' in d['name']:
+                      size -= 20          # نفضّل الشاشات الكبيرة إن وُجدت
+                  score = (rt_ver, size)
+                  if best is None or score > best[0]:
+                      best = (score, d['udid'], d['name'], runtime)
+          if best is None:
+              sys.exit(1)
+          _, udid, name, runtime = best
+          print(f'{udid}|{name}|{runtime}')
+          PY
+          }
+
+          set +e
+          CHOICE="$(pick)"
+          if [ -z "$CHOICE" ]; then
+            echo "ℹ️ لا توجد محاكيات ساعة على السيرفر — ننزّل نظام watchOS ثم نعيد المحاولة…"
+            xcodebuild -downloadPlatform watchOS || true
+            CHOICE="$(pick)"
+          fi
+          set -e
+          if [ -z "$CHOICE" ]; then echo "❌ تعذّر إيجاد محاكي ساعة"; exit 1; fi
+
+          UDID="$(echo "$CHOICE" | cut -d'|' -f1)"
+          NAME="$(echo "$CHOICE" | cut -d'|' -f2)"
+          RUNTIME="$(echo "$CHOICE" | cut -d'|' -f3)"
+          echo "✅ المحاكي: $NAME · $RUNTIME"
+          echo "UDID=$UDID" >> "$GITHUB_ENV"
+          echo "SIM_NAME=$NAME" >> "$GITHUB_ENV"
+          echo "SIM_RUNTIME=$RUNTIME" >> "$GITHUB_ENV"
+
+          echo "▸ تشغيل المحاكي…"
+          xcrun simctl boot "$UDID" 2>/dev/null || true
+          xcrun simctl bootstatus "$UDID" -b
+
+          # 🌐 لغة الساعة عربية (لواجهة صحيحة من اليمين لليسار في صور المتجر)
+          xcrun simctl spawn "$UDID" defaults write -g AppleLanguages -array ar || true
+          xcrun simctl spawn "$UDID" defaults write -g AppleLocale -string "ar_SA" || true
+          xcrun simctl spawn "$UDID" defaults write -g AppleKeyboards -array "ar_SA@hw=US;sw=Arabic" || true
+          xcrun simctl shutdown "$UDID" || true
+          xcrun simctl boot "$UDID" || true
+          xcrun simctl bootstatus "$UDID" -b
+
+          # 🎨 مظهر داكن + ساعة ٩:٤١ (تقاليد صور أبل) + بطارية ممتلئة
+          xcrun simctl ui "$UDID" appearance dark || true
+          xcrun simctl status_bar "$UDID" override --time "9:41" \
+            --batteryState charged --batteryLevel 100 --wifiBars 3 || true
+
+      - name: 🛠️ ترجمة التطبيق لمحاكي الساعة (بلا توقيع)
+        working-directory: ${{ env.PROJECT_DIR }}
+        run: |
+          set -o pipefail
+          xcodebuild build \
+            -project Tasbih.xcodeproj \
+            -scheme Tasbih \
+            -configuration Debug \
+            -destination "id=$UDID" \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGN_IDENTITY="" \
+            DEVELOPMENT_TEAM="" \
+            SWIFT_TREAT_WARNINGS_AS_ERRORS=NO \
+            2>&1 | tail -40
+
+      - name: 📲 تشغيل التطبيق على الساعة وتصوير الشاشات
+        working-directory: ${{ env.PROJECT_DIR }}
+        run: |
+          set -u
+          APP="$(find build/Build/Products -maxdepth 2 -name 'Tasbih.app' | head -1)"
+          if [ -z "$APP" ]; then echo "❌ لم أجد التطبيق بعد الترجمة"; exit 1; fi
+          BUNDLE="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$APP/Info.plist")"
+          echo "التطبيق: $APP"
+          echo "المعرّف: $BUNDLE"
+          echo "BUNDLE_ID=$BUNDLE" >> "$GITHUB_ENV"
+
+          mkdir -p screenshots
+          if ! xcrun simctl install "$UDID" "$APP"; then
+            echo "❌ لم أستطع تثبيت التطبيق على محاكي الساعة — أرسل صورة هذه الصفحة للمساعد"
+            exit 1
+          fi
+
+          shoot () {
+            local name="$1"
+            echo "───────── $name ─────────"
+            xcrun simctl launch --terminate-running-process "$UDID" "$BUNDLE" -sabhaScreen "$name" || return 1
+            sleep 6
+            xcrun simctl io "$UDID" screenshot "screenshots/$name.png" || return 1
+            local bytes
+            bytes=$(stat -f%z "screenshots/$name.png")
+            echo "✔ $name.png · $bytes بايت"
+            if [ "$bytes" -lt 8000 ]; then
+              echo "⚠️ الصورة صغيرة الحجم — قد تكون شاشة فارغة"
+            fi
+            if xcrun simctl spawn "$UDID" launchctl list 2>/dev/null | grep -q "$BUNDLE"; then
+              echo "✔ التطبيق يعمل"
+            else
+              echo "⚠️ التطبيق لا يبدو قيد التشغيل (احتمال توقف) — لكن الصورة حُفظت"
+            fi
+          }
+
+          # ⚠️ الترتيب مهم: لقطة العدّ أولًا (بذكر قصير)، ثم لقطة القراءة
+          #    (تنتقل إلى آية الكرسي وتبقى هي الذكر الحالي بعدها)
+          shoot 01-counter    || true
+          shoot 02-reading    || true
+          shoot 03-menu       || true
+          shoot 04-stats      || true
+          shoot 05-settings   || true
+          shoot 06-onboarding || true
+
+          echo "── نتيجة العدّ ──"
+          ls -la screenshots/ || true
+
+      - name: 📋 ملخّص اللقطات
+        if: always()
+        working-directory: ${{ env.PROJECT_DIR }}
+        run: |
+          {
+            echo "### 📸 لقطات المتجر"
+            echo ""
+            echo "المحاكي: \`${SIM_NAME:-؟}\` · النظام: \`${SIM_RUNTIME:-؟}\`"
+            echo ""
+            if [ -d screenshots ] && [ -n "$(ls -A screenshots 2>/dev/null)" ]; then
+              echo "| الملف | المقاس | الحجم |"
+              echo "|---|---|---|"
+              for f in screenshots/*.png; do
+                [ -e "$f" ] || continue
+                WH="$(sips -g pixelWidth -g pixelHeight "$f" 2>/dev/null | awk '/pixel/{printf "%s ", $2}')"
+                KB=$(( $(stat -f%z "$f") / 1024 ))
+                echo "| \`$(basename "$f")\` | ${WH}px | ${KB} KB |"
+              done
+              echo ""
+              echo "**التنزيل:** قسم **Artifacts** أسفل هذه الصفحة ← \`store-screenshots\`"
+              echo ""
+              echo "**ما فيها:** ① العدّ ② القراءة (آية الكرسي) ③ القائمة ④ الإحصاءات ⑤ الإعدادات (الصوت والاهتزاز) ⑥ شاشة التعريف"
+            else
+              echo "## ❌ لم تُلتقط أي صورة"
+              echo ""
+              echo "لا تقلق — أرسل هذه الصورة للمساعد وسيُصلح السبب. غالبًا:"
+              echo "المحاكي لم يُقلع، أو التطبيق توقف عند التشغيل."
+              echo ""
+              echo "```shell"
+              echo "المشروع: ${{ github.workspace }}"
+              echo "```"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: رفع اللقطات
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: store-screenshots
+          path: ${{ env.PROJECT_DIR || '.' }}/screenshots/
+          retention-days: 30
+          if-no-files-found: warn

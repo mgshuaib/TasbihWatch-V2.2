@@ -181,6 +181,17 @@ struct MenuView: View {
         .sheet(isPresented: $showStats) {
             NavigationStack { StatsView() }
         }
+        .onAppear {
+            #if DEBUG
+            // 📸 لقطات المتجر: فتح الإحصاءات تلقائيًا عند طلبها (التطوير فقط)
+            if SabhaShot.isActive("stats") {
+                Task { @MainActor in
+                    try? await Task.sleep(nanoseconds: 700_000_000)
+                    showStats = true
+                }
+            }
+            #endif
+        }
     }
 }
 

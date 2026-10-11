@@ -47,6 +47,9 @@ targets:
       path: Support/TasbihContainer-Info.plist
       properties:
         CFBundleDisplayName: سُبحة
+        # ✅ الواجهة عربية بالكامل ⇒ نجعل اللغة الأساسية عربية فيكون الاتجاه
+        #    من اليمين إلى اليسار في كل الأحوال (حتى لو كانت الساعة بلغة أخرى).
+        CFBundleDevelopmentRegion: ar
         ITSWatchOnlyContainer: true
         LSApplicationLaunchProhibited: true
         UIDeviceFamily: [1, 2]
@@ -78,6 +81,7 @@ targets:
     sources:
       - path: Shared.swift
       - path: Theme.swift
+      - path: DebugShots.swift            # 📸 مدخل لقطات المتجر (يعمل في نسخة التطوير فقط)
       - path: Sounds.swift
       - path: StatsView.swift
       - path: OnboardingView.swift

@@ -35,7 +35,8 @@ FAIL=0
 # ── ① فحص صياغة كل ملف ──
 for f in *.swift Widget/*.swift; do
   [ -e "$f" ] || continue
-  if ! out="$("$SWIFTC" -parse "$f" 2>&1)"; then
+  # -D DEBUG: حتى نفحص أيضًا الكود المحصور في #if DEBUG (مثل مدخل لقطات المتجر)
+  if ! out="$("$SWIFTC" -parse -D DEBUG "$f" 2>&1)"; then
     echo "  ❌ صياغة $f:"
     echo "$out" | grep -E "error:" | head -5 | sed 's/^/     /'
     FAIL=1
@@ -43,14 +44,26 @@ for f in *.swift Widget/*.swift; do
 done
 
 # ── ② فحص كامل للملف المشترك (لا يستعمل واجهات أبل) ──
-if ! out="$("$SWIFTC" -swift-version 5 -typecheck Shared.swift 2>&1)"; then
+if ! out="$("$SWIFTC" -swift-version 5 -typecheck -D DEBUG Shared.swift 2>&1)"; then
   echo "  ❌ Shared.swift — فحص كامل (تعريفات وأنواع):"
   echo "$out" | grep -E "error:" | head -10 | sed 's/^/     /'
   FAIL=1
 fi
 
+# ── ③ فحص كامل للملفات التي لا تستعمل واجهات أبل (يمكن فحصها على لينكس) ──
+EXTRA_FULL=""
+[ -f Shared.swift ] && EXTRA_FULL="Shared.swift"
+if [ -f DebugShots.swift ]; then EXTRA_FULL="$EXTRA_FULL DebugShots.swift"; fi
+if [ -n "$(echo $EXTRA_FULL | tr -d ' ')" ]; then
+  if ! out="$("$SWIFTC" -swift-version 5 -typecheck -D DEBUG $EXTRA_FULL 2>&1)"; then
+    echo "  ❌ فحص كامل ($EXTRA_FULL):"
+    echo "$out" | grep -E "error:" | head -10 | sed 's/^/     /'
+    FAIL=1
+  fi
+fi
+
 if [ "$FAIL" -eq 0 ]; then
   N=$(ls *.swift Widget/*.swift 2>/dev/null | wc -l | tr -d ' ')
-  echo "  ✔ صياغة $N ملفًا سليمة · Shared.swift فُحص فحصًا كاملًا"
+  echo "  ✔ صياغة $N ملفًا سليمة · وفحص كامل: $EXTRA_FULL"
 fi
 exit "$FAIL"

@@ -31,6 +31,7 @@ targets:
     sources:
       - path: Shared.swift
       - path: Theme.swift
+      - path: DebugShots.swift            # 📸 مدخل لقطات المتجر (يعمل في نسخة التطوير فقط)
       - path: Sounds.swift
       - path: StatsView.swift
       - path: OnboardingView.swift
@@ -52,6 +53,9 @@ targets:
       path: Support/Tasbih-Info.plist
       properties:
         CFBundleDisplayName: سُبحة
+        # ✅ الواجهة عربية بالكامل ⇒ نجعل اللغة الأساسية عربية فيكون الاتجاه
+        #    من اليمين إلى اليسار في كل الأحوال (حتى لو كانت الساعة بلغة أخرى).
+        CFBundleDevelopmentRegion: ar
         # ✅ ضروري: يعلن أن هذا الحزمة تطبيق ساعة بالمفهوم الحديث (Xcode 14+)
         WKApplication: true
         # ✅ تطبيق ساعة مستقل بدون تطبيق آيفون مرافق
