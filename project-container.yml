@@ -169,6 +169,14 @@ schemes:
         TasbihContainer: all
         Tasbih: all
         TasbihWidgetExtension: all
+    # ⚠️ سطر لا تحذفه — درس من فحص الترجمة (exit 70):
+    #    XcodeGen يرتّب أهداف المخطط **أبجديًا**، و«Tasbih» تأتي قبل «TasbihContainer»،
+    #    فيصير هدف التشغيل هو تطبيق الساعة ⇒ لا يعرف xcodebuild أي وجهة iOS:
+    #    «Unable to find a destination matching … { generic:1, platform:iOS }»
+    #    الحل: تثبيت هدف التشغيل صراحةً هنا.
+    run:
+      config: Debug
+      executable: TasbihContainer
     archive:
       config: Release
 
@@ -178,5 +186,8 @@ schemes:
       targets:
         Tasbih: all
         TasbihWidgetExtension: all
+    run:
+      config: Debug
+      executable: Tasbih
     archive:
       config: Release

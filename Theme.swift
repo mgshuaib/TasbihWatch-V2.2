@@ -10,6 +10,12 @@
 
 import SwiftUI
 
+// ⚠️ درس من فحص الترجمة: الملف الذي يستعمل `UIFont` يجب أن يُعلن استيراد UIKit
+//    بنفسه — لا نعتمد على ملف آخر في نفس الهدف. (UIFont متاح على watchOS)
+#if canImport(UIKit)
+import UIKit
+#endif
+
 // MARK: - الألوان
 
 enum SabhaColor {
@@ -86,7 +92,9 @@ enum SabhaFont {
 
     /// خط الواجهة العربية (العناوين والوسوم): المراعي إن كان مرفقًا.
     static func ui(_ size: CGFloat, weight: Font.Weight = .regular) -> Font {
-        let name = weight >= .semibold ? uiFontNames[1] : uiFontNames[0]
+        // ملاحظة: وزن الخط في SwiftUI يقبل == فقط (لا يقبل >=) — نسأل عن الأوزان الثقيلة مباشرة.
+        let isHeavy = [Font.Weight.semibold, .bold, .heavy, .black].contains(weight)
+        let name = isHeavy ? uiFontNames[1] : uiFontNames[0]
         return available(name) ? .custom(name, size: size)
                                : .system(size: size, weight: weight, design: .rounded)
     }

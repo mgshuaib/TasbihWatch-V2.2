@@ -13,8 +13,9 @@
 #        libxrandr2 libgbm1 libpango-1.0-0 libcairo2 libasound2 libxshmfence1 \
 #        fonts-hosny-amiri fonts-noto-core fonts-noto-color-emoji
 #
-#  ⚠️ ملاحظة: هذا الاختبار لا يُترجم كود Swift (لا Mac هنا). فحص Swift خاص
-#     بالتطابق النصي والواجهات فقط؛ الترجمة الحقيقية تحدث في GitHub Actions.
+#  ⚠️ ملاحظة: واجهات أبل (SwiftUI/WidgetKit) لا تُترجم إلا على Mac، فتلك
+#     الترجمة الحقيقية تحدث في GitHub Actions. أما هنا فنفحص الصياغة بالمترجم
+#     الرسمي إن وُجد (swift-syntax-check.sh)، ونتحقق نصيًا من الواجهات والأذكار.
 # ════════════════════════════════════════════════════════════════════════
 set -u
 cd "$(dirname "$0")"
@@ -38,6 +39,12 @@ if [ -d node_modules/puppeteer ]; then
 else
   echo "  ⚠ puppeteer غير مثبّت — نفّذ: npm install puppeteer"
 fi
+
+echo
+echo "════════════════════════════════════════════════════════"
+echo "  🧩 صياغة Swift بالمترجم الرسمي (يكشف الفاصلة الناقصة وأمثالها)"
+echo "════════════════════════════════════════════════════════"
+bash swift-syntax-check.sh || FAIL=1
 
 echo
 echo "════════════════════════════════════════════════════════"

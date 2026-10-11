@@ -158,7 +158,7 @@ let adhkarSets: [DhikrSet] = [
         items: [
             Dhikr(id: "subhan_free", text: "سُبْحَانَ اللَّه", target: 0, full: nil)
         ]
-    )
+    ),
     // ⑦ الاستغفار
     DhikrSet(
         id: "istighfar",

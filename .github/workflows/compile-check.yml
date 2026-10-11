@@ -56,6 +56,13 @@ jobs:
       - name: تثبيت PyYAML
         run: pip install pyyaml
 
+      - name: 🧩 صياغة Swift بالمترجم الرسمي (ثوانٍ — يسبق سيرفر macOS)
+        # درس من فحص الترجمة: فاصلة واحدة ناقصة في Shared.swift أوقفت ترجمة الودجت
+        # على سيرفر أبل بعد أن مرّت بقية الفحوصات. هذه الخطوة تكشفها فورًا.
+        # (إن لم يوجد مترجم Swift على السيرفر تُتخطّى بلا فشل.)
+        working-directory: ${{ env.PROJECT_DIR }}
+        run: bash tests/swift-syntax-check.sh
+
       - name: فحص واجهات Swift وتطابق الأذكار وصلاحية App Group
         working-directory: ${{ env.PROJECT_DIR }}
         run: python3 tests/swift-api-check.py
@@ -142,9 +149,31 @@ jobs:
         working-directory: ${{ env.PROJECT_DIR }}
         run: xcodegen generate --spec "$SPEC"
 
-      - name: قائمة المخطّطات (تشخيص)
-        working-directory: ${{ env.PROJECT_DIR }}
-        run: xcodebuild -list -project Tasbih.xcodeproj
+      - name: 🧭 تشخيص المشروع والوجهات (يظهر في صندوق الملخّص)
+        # بلا هذه الخطوة نضطر لتخمين سبب أخطاء «لا توجد وجهة» أو الهدف المفقود.
+        # الآن يظهر كل شيء في صندوق الملخّص أعلى صفحة التشغيل بلا فتح أي سجل.
+        if: always()
+        working-directory: ${{ env.PROJECT_DIR || '.' }}
+        run: |
+          {
+            echo "### 🧭 تشخيص — ${{ matrix.label }}"
+            echo ""
+            echo "المخطط: \`${{ matrix.scheme }}\` · الوجهة: \`${{ matrix.destination }}\`"
+            echo ""
+            echo "**أهداف ومخططات المشروع:**"
+            echo '```'
+            xcodebuild -list -project Tasbih.xcodeproj 2>&1 || true
+            echo '```'
+            echo "**الوجهات المتاحة لهذا المخطط:**"
+            echo '```'
+            xcodebuild -showdestinations -project Tasbih.xcodeproj -scheme "$SCHEME" 2>&1 | head -25 || true
+            echo '```'
+            echo "**إعدادات المنصّة لهدف $SCHEME:**"
+            echo '```'
+            xcodebuild -showBuildSettings -project Tasbih.xcodeproj -target "$SCHEME" 2>&1 \
+              | grep -E "PLATFORM_NAME|SUPPORTED_PLATFORMS|PRODUCT_NAME|TARGETED_DEVICE_FAMILY|SDKROOT" || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: 🛠️ ترجمة بلا توقيع — ${{ matrix.label }}
         working-directory: ${{ env.PROJECT_DIR }}

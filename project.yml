@@ -128,6 +128,7 @@ schemes:
         TasbihWidgetExtension: all      # صراحةً: ترجمة الودجت داخل نفس البناء
     run:
       config: Debug
+      executable: Tasbih        # ← تثبيت هدف التشغيل (لا تتركه للترتيب الأبجدي في XcodeGen)
     archive:
       config: Release
     test:

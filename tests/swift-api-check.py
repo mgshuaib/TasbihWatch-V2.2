@@ -194,6 +194,19 @@ def check_risky_apis() -> bool:
         if len(set(where)) > 1:
             bad.append(f'تصريح مكرّر: {name} في {sorted(set(where))}')
 
+    # (درس ٢) وزن الخط في SwiftUI يقبل == فقط — لا >= ولا <=  ⇒ خطأ ترجمة مؤكّد
+    for f in files:
+        for i, line in enumerate(f.read_text(encoding='utf-8').splitlines(), 1):
+            code = line.split('//')[0]
+            if re.search(r'[<>]=\s*\.(?:ultraLight|thin|light|regular|medium|semibold|bold|heavy|black)\b', code):
+                bad.append(f'{f.name}:{i} — Font.Weight لا يقبل المقارنة (≥/≤)؛ استعمل == أو قائمة contains')
+
+    # (درس ٣) كل ملف يستعمل واجهة UIKit يجب أن يُعلن `import UIKit` بنفسه
+    for f in files:
+        code = re.sub(r'//.*', '', f.read_text(encoding='utf-8'))
+        if re.search(r'\b(?:UIFont|UIColor|UIImage|UIScreen)\b', code) and 'import UIKit' not in code:
+            bad.append(f'{f.name} — يستعمل واجهات UIKit بلا «import UIKit» في الملف نفسه')
+
     if bad:
         for b in bad:
             print('   ✘ ' + b)
@@ -300,10 +313,56 @@ def check_app_group() -> bool:
     return ok
 
 
+def check_scheme_runnable() -> bool:
+    """⑩ هدف التشغيل في كل مخطط.
+
+    درس من فحص الترجمة (exit 70): XcodeGen **يرتّب أهداف المخطط أبجديًا** ويربط
+    هدف التشغيل بأول هدف قابل للتشغيل — لا باسم المخطط. ففي ملف الحاوية:
+    «Tasbih» (ساعة) تأتي قبل «TasbihContainer» (آيفون) ⇒ يصبح المخطط «ساعة»
+    ويقول xcodebuild: «لا توجد وجهة iOS». الحلّ: `run.executable` في المخطط."""
+    print('⑩ هدف التشغيل في المخططات (سبب فشل الترجمة الثاني)')
+    try:
+        import yaml
+    except ImportError:
+        print('   ⚠ PyYAML غير مثبّت — تخطّي')
+        return True
+
+    expected = {
+        'project.yml':           {'Tasbih': 'Tasbih'},
+        'project-container.yml': {'TasbihContainer': 'TasbihContainer', 'Tasbih': 'Tasbih'},
+    }
+    ok = True
+    for name, want in expected.items():
+        p = ROOT / name
+        if not p.exists():
+            continue
+        d = yaml.safe_load(p.read_text(encoding='utf-8'))
+        targets = d.get('targets') or {}
+        for scheme, exe in want.items():
+            sch = (d.get('schemes') or {}).get(scheme)
+            if sch is None:
+                ok = False
+                print(f'   ✘ {name}: المخطط «{scheme}» مفقود')
+                continue
+            for t in (sch.get('build', {}).get('targets') or {}):
+                if t not in targets:
+                    ok = False
+                    print(f'   ✘ {name} · مخطط {scheme}: الهدف «{t}» غير موجود في الملف')
+            got = (sch.get('run') or {}).get('executable')
+            if got == exe:
+                print(f'   ✔ {name} · مخطط {scheme} ⇒ هدف التشغيل: {got}')
+            else:
+                ok = False
+                print(f'   ✘ {name} · مخطط {scheme}: run.executable = {got!r} (المطلوب {exe!r})'
+                      ' — بدونه يختار XcodeGen هدفًا أبجديًا خاطئًا ⇒ «لا توجد وجهة»')
+    return ok
+
+
 if __name__ == '__main__':
     ok_all = (check_apis() and check_sources() and check_dhikr_parity()
               and check_model_members() and check_risky_apis()
-              and check_assets_and_sources() and check_app_group())
+              and check_assets_and_sources() and check_app_group()
+              and check_scheme_runnable())
     print()
     print('📊 النتيجة:', '✔ كل الفحوصات سليمة' if ok_all else '❌ توجد مشاكل أعلاه')
     sys.exit(0 if ok_all else 1)
