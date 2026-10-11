@@ -18,7 +18,7 @@ struct CounterView: View {
     /// شاشة الترحيب: تظهر مرّة واحدة، ويمكن إعادتها من القائمة
     @AppStorage(SharedKeys.onboarded) private var onboarded = false
     @State private var showOnboarding = false
-    @State private var showPanel = false        // ☰ القائمة المنسدلة في الزاوية اليسرى
+    @State private var showPanel = false        // ☰ القائمة (زرها في صف الأدوات أسفل)
     @State private var showFullText = false
 
     @Environment(\.isLuminanceReduced) private var luminanceReduced
@@ -87,7 +87,7 @@ struct CounterView: View {
                     .animation(.easeInOut(duration: 0.2), value: model.toastMessage)
                 }
 
-                // ☰ القائمة المنسدلة — غير معطّلة لأي تفاعل في الأعلى
+                // ☰ القائمة (زرها أسفل) — طبقة فوق الشاشة لا تعطّل تفاعل الأعلى
                 if showPanel {
                     OptionsPanel(model: model, session: session) {
                         withAnimation(.easeInOut(duration: 0.15)) { showPanel = false }
@@ -106,17 +106,6 @@ struct CounterView: View {
             .animation(.easeInOut(duration: 0.25), value: model.nightMode)
             .toolbar {
                 if !luminanceReduced && model.summary == nil {
-                    // ☰ في الزاوية العلوية اليسرى
-                    // (في RTL يكون .topBarTrailing هو اليسار فعليًا)
-                    ToolbarItem(placement: .topBarTrailing) {
-                        Button { withAnimation(.easeOut(duration: 0.15)) { showPanel.toggle() } } label: {
-                            Image(systemName: "line.3.horizontal")
-                                .font(.system(size: 13, weight: .semibold))
-                                .foregroundStyle(showPanel ? .teal : .white)
-                        }
-                        .accessibilityLabel("القائمة والإعدادات")
-                    }
-
                     if model.readingMode {
                         // 👁️ الرؤية من بعيد — في أعلى الشاشة مع التلقين (كان أسفلها)
                         ToolbarItem(placement: .topBarLeading) {
@@ -377,7 +366,7 @@ struct CounterView: View {
 
     /// صف الأزرار — متاح في الوضعين (العدّ والقراءة) حتى لا يبقى المستخدم بلا أدوات
     private var controlRow: some View {
-        HStack(spacing: 6) {
+        HStack(spacing: 4) {          // ٤ بدل ٦: بعد إضافة زر ☰ صار الصف خمسة أزرار
 
             // − تراجع (لتصحيح ضغطة خاطئة) — الوضع العادي فقط
             if !model.readingMode {
@@ -419,6 +408,16 @@ struct CounterView: View {
                 .buttonStyle(.bordered).tint(.gray)
                 .accessibilityLabel("بدء التلقين")
             }
+
+            // ☰ القائمة — زر واحد فقط، هنا في الأسفل (نُقل من الزاوية العلوية
+            //    حتى لا يكون للقائمة الواحدة زرّان). في RTL يظهر في أقصى اليسار.
+            Button { withAnimation(.easeOut(duration: 0.15)) { showPanel.toggle() } } label: {
+                Image(systemName: "line.3.horizontal")
+                    .font(.system(size: 11, weight: .semibold))
+            }
+            .buttonStyle(.bordered)
+            .tint(showPanel ? .teal : .gray)
+            .accessibilityLabel("القائمة والإعدادات")
         }
         .frame(height: 30)                       // 📐 ثابت: أيقونات مختلفة الأطوال
     }

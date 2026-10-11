@@ -405,11 +405,50 @@ def check_debug_shots() -> bool:
     return ok
 
 
+def check_single_menu_button() -> bool:
+    """⑫ زر واحد للقائمة (لا ازدواج).
+
+    كان للقائمة زرّان: «☰» أعلى اليسار + «☰ القائمة» أسفل الشاشة — وهو تكرار
+    طلبه المستخدم إزالته. وُحّدا في زر واحد أسفل الشاشة (في التطبيق والمحاكي).
+    هذا الفحص يمنع عودة الازدواج في أي تعديل لاحق."""
+    print('⑫ زر واحد للقائمة (لا ازدواج)')
+    ok = True
+
+    cv = (ROOT / 'CounterView.swift').read_text(encoding='utf-8')
+    icons = len(re.findall(r'line\.3\.horizontal', cv))
+    if icons != 1:
+        ok = False
+        print(f'   ✘ CounterView.swift: عدد أيقونات ☰ = {icons} (المطلوب ١ فقط)')
+    # لا يجوز أن تحمل ☰ في شريط الأدوات العلوي (لكن يُسمح بعناصر أخرى هناك)
+    for m in re.finditer(r'ToolbarItem\(placement: \.topBarTrailing\)', cv):
+        if 'line.3.horizontal' in cv[m.start():m.start() + 400]:
+            ok = False
+            print('   ✘ CounterView.swift: يوجد ☰ في شريط الأدوات العلوي (يجب أن تكون أسفل الشاشة)')
+    # ويجب أن تكون داخل صف الأدوات السفلي
+    if cv.find('private var controlRow') == -1 or cv.find('line.3.horizontal') < cv.find('private var controlRow'):
+        ok = False
+        print('   ✘ CounterView.swift: ☰ ليست داخل صف الأدوات السفلي')
+
+    sim = (ROOT / 'simulator.html').read_text(encoding='utf-8')
+    if 'id="menuBtn"' in sim:
+        ok = False
+        print('   ✘ simulator.html: زر ☰ العلوي (menuBtn) ما زال موجودًا')
+    n_menu = sim.count('id="btnMenu"')
+    if n_menu != 1:
+        ok = False
+        print(f'   ✘ simulator.html: عدد أزرار «☰ القائمة» = {n_menu} (المطلوب ١)')
+
+    if ok:
+        print('   ✔ زر واحد فقط: «☰ القائمة» أسفل الشاشة — في التطبيق والمحاكي')
+    return ok
+
+
 if __name__ == '__main__':
     ok_all = (check_apis() and check_sources() and check_dhikr_parity()
               and check_model_members() and check_risky_apis()
               and check_assets_and_sources() and check_app_group()
-              and check_scheme_runnable() and check_debug_shots())
+              and check_scheme_runnable() and check_debug_shots()
+              and check_single_menu_button())
     print()
     print('📊 النتيجة:', '✔ كل الفحوصات سليمة' if ok_all else '❌ توجد مشاكل أعلاه')
     sys.exit(0 if ok_all else 1)

@@ -157,8 +157,9 @@ jobs:
 
           shoot () {
             local name="$1"
-            echo "───────── $name ─────────"
-            xcrun simctl launch --terminate-running-process "$UDID" "$BUNDLE" -sabhaScreen "$name" || return 1
+            local screen="${name#*-}"   # اسم الملف «01-counter» ← اسم الشاشة «counter»
+            echo "───────── $name (شاشة: $screen) ─────────"
+            xcrun simctl launch --terminate-running-process "$UDID" "$BUNDLE" -sabhaScreen "$screen" || return 1
             sleep 6
             xcrun simctl io "$UDID" screenshot "screenshots/$name.png" || return 1
             local bytes

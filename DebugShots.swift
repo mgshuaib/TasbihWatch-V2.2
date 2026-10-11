@@ -24,8 +24,13 @@ import Foundation
 
 enum SabhaShot {
 
-    /// اسم الشاشة المطلوبة (يأتي من معامل الإطلاق `-sabhaScreen <اسم>`)
-    static var screen: String? { UserDefaults.standard.string(forKey: "sabhaScreen") }
+    /// اسم الشاشة المطلوبة (يأتي من معامل الإطلاق `-sabhaScreen <اسم>`).
+    /// نقبل «counter» و«01-counter» معًا: السير يسمّي الملف بالرقم، والمستخدم
+    /// قد يكتب الأمر يدويًا بلا رقم — فلا يهم أيّهما وصل.
+    static var screen: String? {
+        guard let raw = UserDefaults.standard.string(forKey: "sabhaScreen") else { return nil }
+        return raw.contains("-") ? String(raw.split(separator: "-").last ?? "") : raw
+    }
 
     static func isActive(_ name: String) -> Bool { screen == name }
 

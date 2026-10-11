@@ -102,7 +102,7 @@ const drift = await page.evaluate(async () => {
   for (let si = 0; si < SETS.length; si++) for (let ii = 0; ii < SETS[si].items.length; ii++) {
     S.si = si; S.ii = ii; S.c = 0;
     S.read = false; render(); applyLayout(); await raf();
-    const a = { btnTop: box('.btnrow').y, ring: box('#ring').y, menu: box('#menuBtn').y };
+    const a = { btnTop: box('.btnrow').y, ring: box('#ring').y, menu: box('#btnMenu').y };
     S.read = true; render(); applyLayout(); await raf();
     const b = { badgeX: box('#badge').x, badgeY: box('#badge').y, barY: box('.promptbar').y,
                 titleY: box('.rdTitle').y, screen: box('#screen') };
@@ -114,7 +114,7 @@ const uniq = k => [...new Set(drift.map(r => r[k]))];
 const stable = (k, label) => ok(uniq(k).length === 1, label, `قيمة واحدة: ${uniq(k)[0]}`);
 stable('btnTop', 'صف الأزرار ثابت في كل الأذكار');
 stable('ring', 'الحلقة ثابتة في كل الأذكار');
-stable('menu', 'زر ☰ ثابت');
+stable('menu', 'زر القائمة (☰) ثابت');
 stable('badgeX', 'العدّاد: موضعه الأفقي ثابت');
 stable('badgeY', 'العدّاد: موضعه الرأسي ثابت');
 stable('barY', 'شريط التلقين ثابت');
@@ -185,16 +185,28 @@ const shots = [
   ['01-العد-ذكر-قصير.png', "S.si=0;S.ii=3;S.c=12;S.read=false;render();applyLayout();"],
   ['02-العد-آية-الكرسي.png', "S.si=0;S.ii=2;S.c=0;S.read=false;render();applyLayout();"],
   ['03-القراءة-آية-الكرسي.png', "S.si=0;S.ii=2;S.c=7;S.read=true;render();applyLayout();"],
-  ['04-القراءة-عن-بعد.png', "S.dist=true;render();applyLayout();"],
+  ['04-القراءة-عن-بعد.png', "closeMenu();S.aod=false;S.read=true;S.c=7;S.si=0;S.ii=2;render();applyLayout();S.dist=false;toggleDist();"],
   ['05-القائمة-المنسدلة.png', "S.dist=false;S.read=false;render();applyLayout();openMenu('main');"],
   ['06-المجموعات.png', "closeMenu();render();applyLayout();openMenu('sets');"],
+  // ── شاشات «العدّ بلا نظر» ──
+  ['07-وضع-السكون-العد-بالحركة.png', "closeMenu();S.aod=false;S.read=false;S.cMode=1;S.motionOn=true;S.si=0;S.ii=3;S.c=12;render();applyLayout();toggleAOD();"],
+  ['08-قائمة-العد-بلا-نظر.png', "closeMenu();S.aod=false;S.cMode=1;render();applyLayout();openMenu('main');", 'العدّ بلا نظر'],
+  ['09-العد-بالحركة.png', "closeMenu();S.aod=false;S.read=false;S.cMode=1;S.motionOn=true;S.si=0;S.ii=3;S.c=12;render();applyLayout();"],
   // ── تحديث v2 ──
   ['10-الإحصاءات.png', "closeMenu();S.si=0;S.ii=3;S.read=false;S.hist={'2026-10-11':42};S.histTotal=42;render();applyLayout();openMenu('stats');"],
   ['11-شاشة-التعريف.png', "closeMenu();openMenu('howto');"],
   ['12-الصوت-والاهتزاز.png', "closeMenu();openMenu('main');document.querySelector('#menu').scrollTop=200;"],
 ];
-for (const [name, setup] of shots) {
+for (const [name, setup, scrollTo] of shots) {
   await press(setup);
+  if (scrollTo) {                     // تمرير صفحة القائمة إلى قسم بعينه
+    await page.evaluate(t => {
+      const w = document.querySelector('#menu');
+      const el = [...w.querySelectorAll('*')].find(e => e.textContent.trim().startsWith(t) && e.offsetHeight > 0);
+      if (el) el.scrollIntoView({ block: 'start' });
+    }, scrollTo);
+    await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
+  }
   const el = await page.$('#screen');
   await el.screenshot({ path: path.join(SHOTS, name) });
 }
